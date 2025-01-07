@@ -39,3 +39,13 @@ project/
 ├── requirements.txt       # Dependencias del proyecto
 ├── README.md              # Descripción del proyecto
 └── .gitignore             # Archivos y carpetas a ignorar en el control de versiones
+
+
+main           -> Estado estable del proyecto
+dev            -> Desarrollo activo y pruebas
+feature/*      -> Nuevas características
+bugfix/*       -> Corrección de errores
+experiment/*   -> Experimentos y pruebas de nuevas configuraciones
+hotfix/*       -> Correcciones urgentes en producción
+docs           -> Actualización de documentación
+tests          -> Desarrollo de pruebas y validaciones
