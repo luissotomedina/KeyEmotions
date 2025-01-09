@@ -19,7 +19,7 @@ def load_metadata(metadata_path):
         print(f"Error loading {metadata_path}: {e}")
         return None
     
-def process_vgmidi(df):
+def process_metadata_vgmidi(df):
     """
     Process metadata from VGMIDI dataset
 
@@ -45,7 +45,7 @@ def process_vgmidi(df):
 
     return df
 
-def process_emopia(df):
+def process_metadata_emopia(df):
     """
     Process metadata from EMOPIA dataset
 
@@ -69,12 +69,12 @@ def process_metadata(df):
         df: pd.DataFrame, metadata
         
     Output:
-        None
+        df: pd.DataFrame
     """
     if {'valence', 'arousal'}.issubset(df.columns):
-        df = process_vgmidi(df)
+        df = process_metadata_vgmidi(df)
     else:
-        df = process_emopia(df)
+        df = process_metadata_emopia(df)
 
     required_columns = ['name', 'label', 'keyname', 'tempo']
     for col in required_columns:
@@ -82,37 +82,6 @@ def process_metadata(df):
             df[col] = ''
     
     return df
-
-def save_metadata_to_json(metadata_list, output_path):
-    """
-    Save combined metadata to a JSON file
-
-    Input:
-        metadata_list: list of pd.DataFrame, list of metadata
-        output_path: str, path to save the metadata
-    """
-    combined_metadata = pd.concat(metadata_list, ignore_index=True)
-    metadata_dict = combined_metadata.to_dict(orient='records')
-    with open(output_path, 'w') as f:
-        json.dump(metadata_dict, f, indent=4)
-        print(f"Metadata saved to {output_path}")
-
-if __name__=='__main__':
-    raw_data_path = './data/raw'
-    processed_data_path = './data/processed'
-    metadata_list = []
-
-    files = os.listdir(raw_data_path)
-    for file in files:
-        if file.endswith('.csv'):
-            metadata = load_metadata(os.path.join('./data/raw', file))
-            if metadata is not None:
-                metadata = process_metadata(metadata)
-                metadata_list.append(metadata)
-
-    save_metadata_to_json(metadata_list, os.path.join(processed_data_path, 'metadata.json'))
-
-
 
 
     
