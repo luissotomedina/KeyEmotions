@@ -5,7 +5,8 @@ project/
 │   ├── raw/               # Datos crudos: archivos MIDI originales
 │   ├── processed/         # Datos preprocesados (tokens, secuencias)
 │   ├── augmented/         # Datos con data augmentation
-│   └── splits/            # Divisiones de datos (train, val, test)
+│   ├── splits/            # Divisiones de datos (train, val, test)
+│   └── plots/             # Representaciones
 ├── experiments/            # Resultados y configuraciones de experimentos
 │   ├── exp_0001/           # Primer experimento
 │   │   ├── weights/        # Pesos del modelo entrenado

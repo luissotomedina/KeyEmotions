@@ -38,9 +38,8 @@ def process_metadata_vgmidi(df):
 
     df['label'] = df[['valence', 'arousal']].apply(lambda x: valence_arousal_mapping[(x['valence'], x['arousal'])], axis=1)
 
-    df['name'] = df['midi'].apply(lambda x: x.split('/')[-1])
+    df['name'] = df['series'] + '_' + df['console'] + '_' + df['game'] + '_' + df['piece'] + '.mid'
 
-    # Extract name and Q_label
     df = df[['name', 'label']]
 
     return df

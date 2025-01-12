@@ -43,12 +43,13 @@ def get_tempo(mid):
     Output:
         tempo: float, tempo
     """
+    default_tempo_bpm = 120
     for track in mid.tracks:
         for msg in track:
             if msg.type == 'set_tempo':
                 tempo_bpm = mido.tempo2bpm(msg.tempo)
                 return tempo_bpm
-    return None
+    return default_tempo_bpm
 
 def get_n_instruments(mid):
     """
