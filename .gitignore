@@ -1,2 +1,4 @@
 *.mid
 *.csv
+*.png
+tests/

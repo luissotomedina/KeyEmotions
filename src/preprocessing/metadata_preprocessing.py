@@ -78,7 +78,7 @@ def process_metadata(df):
     required_columns = ['name', 'label', 'keyname', 'tempo']
     for col in required_columns:
         if col not in df.columns:
-            df[col] = ''
+            df.loc[:, col] = ''
     
     return df
 
