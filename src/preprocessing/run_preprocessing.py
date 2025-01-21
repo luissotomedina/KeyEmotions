@@ -48,6 +48,6 @@ if __name__=='__main__':
                 processed_metadata = process_metadata(csv_metadata)
                 csv_metadata_list.append(processed_metadata)
 
-    save_to_json(midi_metadata_list, os.path.join(processed_data_path, 'metadata_midi.json'))
-    save_to_json(csv_metadata_list, os.path.join(processed_data_path, 'metadata_csv.json'), is_midi=False)
+    save_to_json(midi_metadata_list, os.path.join(processed_data_path, 'midi_metadata.json'))
+    save_to_json(csv_metadata_list, os.path.join(processed_data_path, 'csv_metadata.json'), is_midi=False)
 

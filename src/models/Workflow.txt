@@ -1,0 +1,25 @@
+INPUT: MIDI Sequence + Emotion Label
+       └──────► Preprocessing (Tokenize MIDI, Encode Emotions)
+                     │
+                     ▼
+        ┌─────────────────────────────────────┐
+        │    CONTENT ENCODER (Transformer)    │
+        └─────────────────────────────────────┘
+                     │
+        ┌────────────┴───────────────┐
+        │         Latent Space       │
+        │    z_content (musical)     │
+        │    z_emotion (emotional)   │
+        └────────────┬───────────────┘
+                     │
+      Emotion Vector ├─────► Combine z_content + z_emotion
+                     │
+                     ▼
+        ┌─────────────────────────────────────┐
+        │    DECODER (Transformer Autoregres.)│
+        └─────────────────────────────────────┘
+                     │
+                     ▼
+        ┌─────────────────────────────────────┐
+        │       OUTPUT: Generated MIDI        │
+        └─────────────────────────────────────┘
