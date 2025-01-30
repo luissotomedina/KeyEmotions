@@ -13,7 +13,7 @@ def create_environment(run_folders):
                     "sample_path": "./experiments/samples/",
                 }
 
-    Output:
+    Returns:
         None
     """
     try:
