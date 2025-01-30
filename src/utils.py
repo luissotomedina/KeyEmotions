@@ -43,3 +43,14 @@ def load_json(filename, file_path):
     except Exception as e:
         print(f"Error loading JSON file: {e}")
         return None
+    
+def save_midi(mid, output_path):
+    """
+    Save MIDI file.
+    
+    Parameters:
+        mid: MidiFile, MIDI file to save.
+        output_path (str): Path to save the MIDI file.
+    """
+    mid.save(output_path)
+    print(f"MIDI file saved to {output_path}")
