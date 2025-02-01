@@ -8,13 +8,15 @@ data:
         analysis:          ./data/processed/analysis
         cleaned:          ./data/processed/cleaned
     prepared_dir:          ./data/prepared
-    prepared: 
-        train:            ./data/prepared/train
-        val:              ./data/prepared/val
 
-    vocab_size:           30000   
-    max_bars:             16
-    max_seq_len:          1024                 
+    # vocab_size:           30000   
+    max_bars:             8
+    grids_per_bar:        32
+
+    train_ratio:          0.9
+    val_ratio:            0.1
+
+    # max_seq_len:          1024                 
     # enc_seqlen:       128
     # dec_seqlen:       1280               
     # batch_size:       4
@@ -46,6 +48,8 @@ model:
     pretrained_optim_path:       null
 
 training:
+    
+
     device:           cuda:0
     ckpt_dir:         ./ckpt/enc_dec_12L-16_bars-seqlen_1280
     trained_steps:    0

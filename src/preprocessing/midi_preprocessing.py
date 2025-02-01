@@ -1,8 +1,13 @@
 import os
+import sys
 from pathlib import Path
 
 import mido
 from mido import MidiFile, MidiTrack, merge_tracks
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from utils.utils import *
+from utils.midi_utils import * 
 
 def load_midi(midi_path):
     """
@@ -84,7 +89,7 @@ def get_numerator_denominator(mid):
         numerator: int, numerator of the time signature
         denominator: int, denominator of the time signature
     """
-    numerator, denominator = 4, 4
+    numerator, denominator = None, None
     for track in mid.tracks:
         for msg in track:
             if msg.type == 'time_signature':
@@ -138,14 +143,13 @@ def get_midi_features(mid):
     }
     return midi_features
 
-def combine_midi_tracks(mid, output_path):
+def combine_midi_tracks(mid):
     """
     Combine midi tracks into a single track
 
     Input:
         mid: mido.MidiFile, midi data
-        output_path: str, path to save the merged midi file
-
+        
     Returns:
         combined_midi: mido.MidiFile, combined midi file
     """
@@ -156,8 +160,6 @@ def combine_midi_tracks(mid, output_path):
 
     combined_midi.tracks = [merge_tracks(mid.tracks)]
 
-    # Returns_file = os.path.join(Returns_path, Path(mid.filename).stem + "_merged.mid")
-    # combined_midi.save(Returns_file)
     return combined_midi
 
 def save_bar_messages(message, bar_number, ticks_per_beat, filename, output_path):
@@ -177,11 +179,11 @@ def save_bar_messages(message, bar_number, ticks_per_beat, filename, output_path
     for msg in message:
         msg.time = int(msg.time) # int(msg.time)
         bar_track.append(msg)
-    Returns_file = os.path.join(output_path, f"{filename}_{bar_number}.mid")
-    bar_midi.save(Returns_file)
-    print(f"Bar {bar_number} saved to {Returns_file}")
+    output_file = os.path.join(output_path, f"{filename}_{bar_number}.mid")
+    save_midi(bar_midi, output_file)
+    print(f"Bar {bar_number} saved to {output_file}")
 
-def split_midi_by_bar(mid, bars_to_extract, output_path, filename):
+def split_midi_by_bar(mid, bars_to_extract, filename, output_path):
     """
     Split a midi file by bar
     
@@ -193,7 +195,7 @@ def split_midi_by_bar(mid, bars_to_extract, output_path, filename):
         save_remaining: bool, save remaining messages    
     """
     ticks_per_beat = mid.ticks_per_beat
-    numerator_time_signature = next((msg.numerator for msg in mid if msg.type == 'time_signature'), 4)
+    numerator_time_signature, _ =  get_numerator_denominator(mid) #next((msg.numerator for msg in mid if msg.type == 'time_signature'), 4)
     ticks_per_bar = ticks_per_beat * numerator_time_signature
     ticks_to_extract = ticks_per_bar * bars_to_extract
 
@@ -215,6 +217,7 @@ def split_midi_by_bar(mid, bars_to_extract, output_path, filename):
                     current_ticks = 0
                     bar_messages.append(metadata_info[-1])
                     save_bar_messages(bar_messages, current_bar, ticks_per_beat, filename, output_path)
+                    
                     bar_messages = metadata_info[:-1]
                     bar_messages.extend(chord_messages)
                     chord_messages = []
@@ -224,51 +227,5 @@ def split_midi_by_bar(mid, bars_to_extract, output_path, filename):
                     bar_messages.extend(chord_messages)
                     chord_messages = []
 
-# IMPROVED VERSION
-# def split_midi_by_bar(mid, bars_to_extract, output_path, filename, save_remaining=False):
-#     """
-#     Split a midi file by bar
 
-#     Parameters: 
-#         mid: mido.MidiFile, midi data
-#         bars_to_extract: int, number of bars to extract
-#         output_path: str, path to save the midi files
-#         filename: str, filename
-#         save_remaining: bool, save remaining messages
-#     """
-#     ticks_per_beat = mid.ticks_per_beat
-#     numerator_time_signature = next((msg.numerator for msg in mid if msg.type == 'time_signature'), 4)
-#     ticks_per_bar = ticks_per_beat * numerator_time_signature
-#     ticks_to_extract = ticks_per_bar * bars_to_extract
 
-#     current_bar = 0
-#     current_ticks = 0
-#     metadata_info = [msg for msg in mid if msg.is_meta]
-#     bar_messages = []
-#     chord_messages = []
-
-#     for track in mid.tracks:
-#         for msg in track:
-#             chord_messages.append(msg)
-
-#             if msg.time > 0: 
-#                 current_ticks += msg.time
-
-#                 if current_ticks >= ticks_to_extract:
-#                     current_bar += 1
-#                     current_ticks -= ticks_to_extract
-
-#                     # Save the current bar messages
-#                     bar_messages.extend(metadata_info)
-#                     bar_messages.append(metadata_info[-1])
-#                     save_bar_messages(bar_messages, current_bar, ticks_per_beat, filename, output_path=output_path)
-
-#                     # Prepare for the next bar
-#                     bar_messages = metadata_info[:-1]
-#                     chord_messages.clear()
-
-#     # Save remaining messages if any
-#     if chord_messages and save_remaining:
-#         current_bar += 1
-#         bar_messages.extend(chord_messages)
-#         save_bar_messages(bar_messages, current_bar, ticks_per_beat, filename)

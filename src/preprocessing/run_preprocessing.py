@@ -1,26 +1,15 @@
 import os
+import sys
 import json
 import yaml
 import pandas as pd
+
 from midi_preprocessing import *
 from metadata_preprocessing import *
 
-def save_to_json(metadata_list, output_path, is_midi=True):
-    """
-    Save combined metadata to a JSON file
-
-    Parameters:
-        metadata_list: list of pd.DataFrame, list of metadata
-        output_path: str, path to save the metadata
-    """
-    if is_midi:
-        combined_metadata = pd.DataFrame(metadata_list)
-    else:
-        combined_metadata = pd.concat(metadata_list, ignore_index=True)
-    metadata_dict = combined_metadata.to_dict(orient='records')
-    with open(output_path, 'w') as f:
-        json.dump(metadata_dict, f, indent=4)
-        print(f"Metadata saved to {output_path}")
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from utils.utils import *
+from utils.midi_utils import *
 
 
 if __name__=='__main__':
@@ -37,21 +26,44 @@ if __name__=='__main__':
     csv_metadata_list = []
     midi_metadata_list = []
 
+    midi_delete_list = []
+
     # Midi files preprocessing
     midi_paths = list(Path(midi_raw_data_path).rglob("*.mid"))
     for midi_path in midi_paths:
-        print(f"Processing {midi_path}")
-        midi_file = load_midi(midi_path)
-        midi_features = get_midi_features(midi_file)
-        metadata = {
-            "name": Path(midi_path).stem,
-            **midi_features
-        }
-        midi_metadata_list.append(metadata)
+        midi_name = Path(midi_path).stem
+        print(f"Processing {midi_name}")
+        try:
+            midi_file = load_midi(midi_path)
+            midi_features = get_midi_features(midi_file)
+            metadata = {
+                "name": midi_name,
+                **midi_features
+            }
+            midi_metadata_list.append(metadata)
+
+            if out_of_range_pitch(midi_file):
+                midi_delete_list.append([midi_name, "Out of range pitch"])
+                continue
+
+            if more_than_one_time_signature(midi_file):
+                midi_delete_list.append([midi_name, "More than one time signature"])
+                continue
+
+            # Merge tracks
+            combined_midi = combine_midi_tracks(midi_file)
+
+            # Split midi by bar
+            split_midi_by_bar(combined_midi, MAX_BARS, output_path=cleaned_data_path, filename=midi_name)
+
+        except Exception as e:
+            print(f"Error processing {midi_path}: {e}") # 19 files with error due to no time signature
+            midi_delete_list.append([midi_name, str(e)])
+
         # Merge tracks
-        combined_midi = combine_midi_tracks(midi_file, output_path=cleaned_data_path)
-        print(midi_path.stem)
-        split_midi_by_bar(combined_midi, MAX_BARS, output_path=cleaned_data_path, filename=midi_path.stem)
+        # combined_midi = combine_midi_tracks(midi_file, output_path=cleaned_data_path)
+        # print(midi_path.stem)
+        # split_midi_by_bar(combined_midi, MAX_BARS, output_path=cleaned_data_path, filename=midi_path.stem)
 
 
     # Metadata files preprocessing
@@ -63,8 +75,10 @@ if __name__=='__main__':
         csv_metadata_list.append(processed_metadata)
 
 
-    save_to_json(midi_metadata_list, os.path.join(analysis_data_path, 'midi_metadata.json'))
-    save_to_json(csv_metadata_list, os.path.join(analysis_data_path, 'csv_metadata.json'), is_midi=False)
+    save_metadata(midi_metadata_list, os.path.join(analysis_data_path, 'midi_metadata.json'))
+    save_metadata(csv_metadata_list, os.path.join(analysis_data_path, 'csv_metadata.json'), is_midi=False)
+    save_to_json(midi_delete_list, os.path.join(analysis_data_path, 'midi_delete_list.json'))
+
 
 
 

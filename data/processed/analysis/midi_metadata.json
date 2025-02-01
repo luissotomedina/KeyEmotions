@@ -80,16 +80,6 @@
         "bars": 42.0
     },
     {
-        "name": "Banjo-Kazooie_N64_Banjo-Kazooie_Motzhand",
-        "note_density": 7.875,
-        "tempo": 120.0,
-        "n_instruments": 1,
-        "duration": 24.0,
-        "numerator": 4,
-        "denominator": 4,
-        "bars": 12.0
-    },
-    {
         "name": "Banjo-Kazooie_N64_Banjo-Kazooie_Mumbos Mountain",
         "note_density": 8.863740931085337,
         "tempo": 120.0,
@@ -98,16 +88,6 @@
         "numerator": 4,
         "denominator": 4,
         "bars": 65.0
-    },
-    {
-        "name": "Banjo-Kazooie_N64_Banjo-Kazooie_Rusty Bucket Bay Aquatic",
-        "note_density": 15.906333155934007,
-        "tempo": 120.0,
-        "n_instruments": 2,
-        "duration": 234.875,
-        "numerator": 4,
-        "denominator": 4,
-        "bars": 117.0
     },
     {
         "name": "Banjo-Kazooie_N64_Banjo-Tooie_Cauldron Keep",
@@ -270,16 +250,6 @@
         "bars": 77.0
     },
     {
-        "name": "Chrono_SNES_Chrono Trigger_600 AD",
-        "note_density": 11.684760364344006,
-        "tempo": 85.0,
-        "n_instruments": 2,
-        "duration": 182.117556,
-        "numerator": 4,
-        "denominator": 4,
-        "bars": 64.0
-    },
-    {
         "name": "Chrono_SNES_Chrono Trigger_Chrono Trigger",
         "note_density": 37.51372549019608,
         "tempo": 128.0,
@@ -348,16 +318,6 @@
         "numerator": 3,
         "denominator": 4,
         "bars": 86.0
-    },
-    {
-        "name": "Chrono_SNES_Chrono Trigger_Wings That Cross Time",
-        "note_density": 19.557711865404173,
-        "tempo": 135.0,
-        "n_instruments": 2,
-        "duration": 184.888704,
-        "numerator": 4,
-        "denominator": 4,
-        "bars": 104.0
     },
     {
         "name": "Donkey Kong_SNES_Donkey Kong Country 2 Diddy's Kong Quest_Bayou Boogie",
@@ -600,16 +560,6 @@
         "bars": 66.0
     },
     {
-        "name": "Final Fantasy_PS1_Final Fantasy VII_Electric de Chocobo",
-        "note_density": 19.692307692307693,
-        "tempo": 160.0,
-        "n_instruments": 2,
-        "duration": 91.8125,
-        "numerator": 4,
-        "denominator": 4,
-        "bars": 61.0
-    },
-    {
         "name": "Final Fantasy_PS1_Final Fantasy VII_Fortress of the Condor",
         "note_density": 12.597447484508313,
         "tempo": 124.0,
@@ -678,16 +628,6 @@
         "numerator": 4,
         "denominator": 4,
         "bars": 100.0
-    },
-    {
-        "name": "Final Fantasy_PS1_Final Fantasy VII_Judgement Day",
-        "note_density": 7.064725227564476,
-        "tempo": 90.0,
-        "n_instruments": 2,
-        "duration": 93.13879575,
-        "numerator": 4,
-        "denominator": 4,
-        "bars": 35.0
     },
     {
         "name": "Final Fantasy_PS1_Final Fantasy VII_Life Stream",
@@ -870,16 +810,6 @@
         "bars": 29.0
     },
     {
-        "name": "Final Fantasy_PS1_Final Fantasy VII_Weapon Raid",
-        "note_density": 11.994803338512645,
-        "tempo": 130.0,
-        "n_instruments": 2,
-        "duration": 77.5335763125,
-        "numerator": 4,
-        "denominator": 4,
-        "bars": 42.0
-    },
-    {
         "name": "Final Fantasy_PS1_Final Fantasy VII_Who Are You",
         "note_density": 2.9197080291970803,
         "tempo": 125.0,
@@ -990,26 +920,6 @@
         "bars": 66.0
     },
     {
-        "name": "Mana_SNES_Secret of Mana_Spirit of the Night",
-        "note_density": 9.717948717948717,
-        "tempo": 80.0,
-        "n_instruments": 2,
-        "duration": 156.0,
-        "numerator": 4,
-        "denominator": 4,
-        "bars": 52.0
-    },
-    {
-        "name": "Mana_SNES_Secret of Mana_Tell A Strange Tale",
-        "note_density": 19.88697203399343,
-        "tempo": 140.0,
-        "n_instruments": 2,
-        "duration": 150.85252771875,
-        "numerator": 4,
-        "denominator": 4,
-        "bars": 88.0
-    },
-    {
         "name": "Mana_SNES_Secret of Mana_The Holy Intruder",
         "note_density": 16.41716589572905,
         "tempo": 140.0,
@@ -1048,16 +958,6 @@
         "numerator": 4,
         "denominator": 4,
         "bars": 24.0
-    },
-    {
-        "name": "Other_N64_GoldenEye 007_Finish the job James If you can",
-        "note_density": 15.635440119826848,
-        "tempo": 190.0,
-        "n_instruments": 2,
-        "duration": 111.15772799999999,
-        "numerator": 4,
-        "denominator": 4,
-        "bars": 88.0
     },
     {
         "name": "Other_N64_GoldenEye 007_Frigate",
@@ -12270,16 +12170,6 @@
         "bars": 64.0
     },
     {
-        "name": "Super Mario_NES_Super Mario Bros_Underworld",
-        "note_density": 5.851520908571403,
-        "tempo": 90.0,
-        "n_instruments": 2,
-        "duration": 26.659735552083333,
-        "numerator": 4,
-        "denominator": 4,
-        "bars": 10.0
-    },
-    {
         "name": "Super Mario_SNES_Super Mario World_Castle",
         "note_density": 17.575169738118333,
         "tempo": 100.0,
@@ -12298,16 +12188,6 @@
         "numerator": 4,
         "denominator": 4,
         "bars": 56.0
-    },
-    {
-        "name": "Super Mario_SNES_Super Mario World_Forest of Illusion",
-        "note_density": 5.890630890630891,
-        "tempo": 130.0,
-        "n_instruments": 2,
-        "duration": 29.538432,
-        "numerator": 4,
-        "denominator": 4,
-        "bars": 16.0
     },
     {
         "name": "Super Mario_SNES_Super Mario World_Map",
@@ -12358,16 +12238,6 @@
         "numerator": 4,
         "denominator": 4,
         "bars": 24.0
-    },
-    {
-        "name": "The Legend of Zelda_N64_The Legend of Zelda Majora's Mask_Chase Theme",
-        "note_density": 9.56043478022217,
-        "tempo": 90.0,
-        "n_instruments": 2,
-        "duration": 60.666697,
-        "numerator": 4,
-        "denominator": 4,
-        "bars": 23.0
     },
     {
         "name": "The Legend of Zelda_N64_The Legend of Zelda Majora's Mask_Clock Town",
@@ -12460,26 +12330,6 @@
         "bars": 53.0
     },
     {
-        "name": "The Legend of Zelda_N64_The Legend of Zelda Ocarina of Time_Gerudo Valley",
-        "note_density": 33.11538461538461,
-        "tempo": 120.0,
-        "n_instruments": 2,
-        "duration": 156.0,
-        "numerator": 4,
-        "denominator": 4,
-        "bars": 78.0
-    },
-    {
-        "name": "The Legend of Zelda_N64_The Legend of Zelda Ocarina of Time_Goron City",
-        "note_density": 4.8644053671139265,
-        "tempo": 120.0,
-        "n_instruments": 1,
-        "duration": 62.494791666666664,
-        "numerator": 4,
-        "denominator": 4,
-        "bars": 31.0
-    },
-    {
         "name": "The Legend of Zelda_N64_The Legend of Zelda Ocarina of Time_Hyrule Castle Courtyard",
         "note_density": 8.215285993063771,
         "tempo": 120.0,
@@ -12508,16 +12358,6 @@
         "numerator": 4,
         "denominator": 4,
         "bars": 19.0
-    },
-    {
-        "name": "The Legend of Zelda_N64_The Legend of Zelda Ocarina of Time_Introduction",
-        "note_density": 5.764343689558684,
-        "tempo": 80.0,
-        "n_instruments": 2,
-        "duration": 146.07040199999997,
-        "numerator": 4,
-        "denominator": 4,
-        "bars": 49.0
     },
     {
         "name": "The Legend of Zelda_N64_The Legend of Zelda Ocarina of Time_Kakariko Village",
@@ -12550,16 +12390,6 @@
         "bars": 33.0
     },
     {
-        "name": "The Legend of Zelda_N64_The Legend of Zelda Ocarina of Time_Lost Woods",
-        "note_density": 24.111135222246336,
-        "tempo": 140.0,
-        "n_instruments": 2,
-        "duration": 61.714223999999994,
-        "numerator": 4,
-        "denominator": 4,
-        "bars": 36.0
-    },
-    {
         "name": "The Legend of Zelda_N64_The Legend of Zelda Ocarina of Time_Medley of Time",
         "note_density": 14.51058242647123,
         "tempo": 155.0,
@@ -12568,26 +12398,6 @@
         "numerator": 4,
         "denominator": 4,
         "bars": 231.0
-    },
-    {
-        "name": "The Legend of Zelda_N64_The Legend of Zelda Ocarina of Time_Owls Theme",
-        "note_density": 10.675265092920686,
-        "tempo": 80.0,
-        "n_instruments": 2,
-        "duration": 100.044354,
-        "numerator": 4,
-        "denominator": 4,
-        "bars": 33.0
-    },
-    {
-        "name": "The Legend of Zelda_N64_The Legend of Zelda Ocarina of Time_Prelude of Light",
-        "note_density": 2.491349480968858,
-        "tempo": 120.0,
-        "n_instruments": 2,
-        "duration": 18.0625,
-        "numerator": 4,
-        "denominator": 4,
-        "bars": 9.0
     },
     {
         "name": "The Legend of Zelda_N64_The Legend of Zelda Ocarina of Time_Sarias Song",

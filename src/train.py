@@ -8,7 +8,7 @@ import torch
 import torch.optim as optim
 from torch.utils.data import DataLoader
 
-from utils import *
+from utils.utils import *
 from models.transformer_VAE import *
 from preprocessing.data_loader import create_tokenizer, create_dataset
 

@@ -1,4 +1,5 @@
 *.mid
 *.csv
 *.png
+*.pyc
 tests/
