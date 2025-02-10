@@ -8,8 +8,12 @@ data:
         analysis:          ./data/processed/analysis
         cleaned:          ./data/processed/cleaned
     prepared_dir:          ./data/prepared
-
-    # vocab_size:           30000   
+    prepared:
+        train:             ./data/prepared/train
+        train_data:        ./data/prepared/train.pkl
+        val:               ./data/prepared/valid
+        val_data:          ./data/prepared/valid.pkl
+ 
     max_bars:             8
     grids_per_bar:        32
 
@@ -19,45 +23,43 @@ data:
     # max_seq_len:          1024                 
     # enc_seqlen:       128
     # dec_seqlen:       1280               
-    # batch_size:       4
 
 model:
     n_head:              8
-    vocab_size:          30000
     d_model:             128
-    num_layers:          12
-    lattent_dim:         64 # Latent space dimensionality
-    emotion_dim:         4 # Dimensionality of emotion vector
-    max_seq_len:         1024 # Maximum sequence length
+    num_layers:          6
+    max_seq_len:         1400
+    vocab_size:          183 
 
 
-    enc_n_layer:      12
-    enc_n_head:       8
-    enc_d_model:      512
-    enc_d_ff:         2048
-    dec_n_layer:      12
-    dec_n_head:       8
-    dec_d_model:      512
-    dec_d_ff:         2048
-    d_embed:          512
-    d_latent:         128
-    d_polyph_emb:     64
-    d_rfreq_emb:      64
-    cond_mode:        in-attn
-    pretrained_params_path:      null
-    pretrained_optim_path:       null
+    # enc_n_layer:      12
+    # enc_n_head:       8
+    # enc_d_model:      512
+    # enc_d_ff:         2048
+    # dec_n_layer:      12
+    # dec_n_head:       8
+    # dec_d_model:      512
+    # dec_d_ff:         2048
+    # d_embed:          512
+    # d_latent:         128
+    # d_polyph_emb:     64
+    # d_rfreq_emb:      64
+    # cond_mode:        in-attn
+    # pretrained_params_path:      null
+    # pretrained_optim_path:       null
 
 training:
-    
+    lr:               1.0e-4
+    batch_size:       16
+    max_epochs:       1
+    checkpoint_dir:   ./checkpoints
 
-    device:           cuda:0
-    ckpt_dir:         ./ckpt/enc_dec_12L-16_bars-seqlen_1280
-    trained_steps:    0
-    max_epochs:       1000
     max_lr:           1.0e-4
     min_lr:           5.0e-6
+    lr_decay_steps:   150000    
+    ckpt_dir:         ./ckpt/enc_dec_12L-16_bars-seqlen_1280
+    trained_steps:    0
     lr_warmup_steps:  200
-    lr_decay_steps:   150000
     no_kl_steps:      10000
     kl_cycle_steps:   5000
     kl_max_beta:      1.0
@@ -68,6 +70,7 @@ training:
     val_interval:     50
 
 generate:
+
     temperature:                1.2
     nucleus_p:                  0.9
     use_latent_sampling:        False

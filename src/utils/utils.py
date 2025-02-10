@@ -39,6 +39,25 @@ def save_to_json(data, output_path):
         json.dump(data, f, indent=4)
         print(f"Data saved to {output_path}")
 
+def load_pickle(file_path):
+    """
+    Load pickle file from a specific directory.
+    
+    Parameters: 
+        file_path (str): Path to the directory where the file is located.
+    
+    Returns:
+        data: loaded data.
+    """
+    try: 
+        with open(file_path, 'rb') as f:
+            data = pickle.load(f)
+            print(f"Pickle file loaded from {file_path}")
+            return data
+    except Exception as e:
+        print(f"Error loading pickle file: {e}")
+        return None
+
 def save_to_pickle(data, output_path):
     """
     Save data to a pickle file.

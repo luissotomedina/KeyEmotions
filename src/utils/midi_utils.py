@@ -12,7 +12,7 @@ def save_midi(mid, output_path):
     """
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     mid.save(output_path)
-    print(f"MIDI file saved to {output_path}")
+    # print(f"MIDI file saved to {output_path}")
 
 def pitch_range(mid):
     """

@@ -2,4 +2,6 @@
 *.csv
 *.png
 *.pyc
-tests/
+old/
+Simplest_example/
+__pycache__/
