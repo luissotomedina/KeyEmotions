@@ -29,7 +29,7 @@ model:
     d_model:             128
     num_layers:          6
     max_seq_len:         1400
-    vocab_size:          183 
+    vocab_size:          181 
 
 
     # enc_n_layer:      12
@@ -49,10 +49,10 @@ model:
     # pretrained_optim_path:       null
 
 training:
-    lr:               1.0e-4
+    lr:               0.0005
     batch_size:       16
-    max_epochs:       1
-    checkpoint_dir:   ./checkpoints
+    max_epochs:       10
+    experiments_dir:   ./experiments
 
     max_lr:           1.0e-4
     min_lr:           5.0e-6

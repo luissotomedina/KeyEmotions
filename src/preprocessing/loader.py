@@ -13,6 +13,17 @@ class Loader:
         self.number_of_tokens = 0
         self.vocab_size = 0
 
+        self.sos_idx = 0
+        self.emotion_idx = 1
+        self.bar_idx = 5
+        self.pos_idx = 6
+        self.pitch_idx = 38
+        self.dur_idx = 128
+        self.sign_idx = 160
+        self.tpb_idx = 170
+        self.pad_idx = 179
+        self.eos_idx = 180
+
     # def number_of_tokens_with_padding(self):
     #     return self.number_of_tokens + 1  # Ensure padding is accounted for
 
@@ -41,11 +52,11 @@ class Loader:
     def _set_vocab_size(self, songs):
         self.vocab_size = max(max(song) for song in songs) + 1
 
-    def _pad_sequence(self, sequence, pad_token=181):
+    def _pad_sequence(self, sequence):
         eos_token = sequence[-1]
         remi_token = sequence[:-1]
         
-        return remi_token + [pad_token] * (self.max_len - len(sequence)) + [eos_token] # Ensure last token is not padded, EOS token
+        return remi_token + [self.pad_idx] * (self.max_len - len(sequence)) + [eos_token] # Ensure last token is not padded, EOS token
 
     def _create_dataloader(self, input_sequences, shuffle=True, drop_last=True):
         input_tensors = torch.tensor(input_sequences, dtype=torch.int64)

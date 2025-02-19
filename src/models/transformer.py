@@ -11,58 +11,62 @@ from preprocessing.loader import Loader
 class TransformerNet(nn.Module):
     def __init__(self, vocab_size, d_model, nhead, num_layers, dropout=0.1):
         super(TransformerNet, self).__init__()
-        self.encoder = Encoder(vocab_size, d_model, nhead, num_layers, dropout)
-        self.decoder = Decoder(vocab_size, d_model, nhead, num_layers, dropout)
-
-    def forward(self, src, tgt, tgt_mask, src_pad_mask=None, tgt_pad_mask=None):
-        memory = self.encoder(src, src_pad_mask=src_pad_mask)
-        z = self.decoder(tgt, memory, tgt_mask=tgt_mask, tgt_pad_mask=tgt_pad_mask, memory_pad_mask=src_pad_mask)
-        return z
-   
-class Encoder(nn.Module):
-    def __init__(self, vocab_size, d_model, nhead, num_layers, dropout):
-        super(Encoder, self).__init__()
         self.embedding = nn.Embedding(vocab_size, d_model)
         self.pos_enc = PositionalEncoding(d_model, dropout=dropout)
-        encoder_layers = nn.TransformerEncoderLayer(d_model=d_model, nhead=nhead, dropout=dropout, batch_first=True)
-        self.encoder = nn.TransformerEncoder(encoder_layers, num_layers=num_layers)
-
-    def forward(self, src, src_mask=None, src_pad_mask=None):
+        self.encoder = Encoder(d_model, nhead, num_layers, dropout)
+        self.decoder = Decoder(d_model, nhead, num_layers, dropout)
+        self.fc_out = nn.Linear(d_model, vocab_size)
+        self.norm = nn.LayerNorm(d_model)
+        
+    def forward(self, src, tgt, tgt_mask, src_pad_mask=None, tgt_pad_mask=None):
         src = self.embedding(src)
         src = self.pos_enc(src)
-        z = self.encoder(src, mask=src_mask, src_key_padding_mask=src_pad_mask)
-        return z
-    
-class Decoder(nn.Module):
-    def __init__(self, vocab_size, d_model, nhead, num_layers, dropout):
-        super(Decoder, self).__init__()
-        self.embedding = nn.Embedding(vocab_size, d_model)
-        self.pos_enc = PositionalEncoding(d_model, dropout=dropout)
-        decoder_layers = nn.TransformerDecoderLayer(d_model=d_model, nhead=nhead, dropout=dropout, batch_first=True)
-        self.decoder = nn.TransformerDecoder(decoder_layers, num_layers=num_layers)
-        self.fc_out = nn.Linear(d_model, vocab_size)
-
-    def forward(self, tgt, memory, tgt_mask=None, tgt_pad_mask=None, memory_pad_mask=None):
+        src = self.norm(src)
+        memory = self.encoder(src, src_pad_mask=src_pad_mask)
+        
         tgt = self.embedding(tgt)
         tgt = self.pos_enc(tgt)
-        z = self.decoder(tgt, memory, tgt_mask=tgt_mask, tgt_key_padding_mask=tgt_pad_mask, memory_key_padding_mask=memory_pad_mask)
-        z = self.fc_out(z)
-        return z
+        tgt = self.norm(tgt)
+        
+        z = self.decoder(tgt, memory, tgt_mask=tgt_mask, tgt_pad_mask=tgt_pad_mask, memory_pad_mask=src_pad_mask)
+        return self.fc_out(z)
 
-class PositionalEncoding(nn.Module):  # documentation code
-    def __init__(self, d_model: int, dropout: float=0.0, max_len: int=1400):
-        super(PositionalEncoding, self).__init__()  # old syntax
+class Encoder(nn.Module):
+    def __init__(self, d_model, nhead, num_layers, dropout):
+        super(Encoder, self).__init__()
+        encoder_layers = nn.TransformerEncoderLayer(
+            d_model=d_model, nhead=nhead, dropout=dropout, batch_first=True
+        )
+        self.encoder = nn.TransformerEncoder(
+            encoder_layers, num_layers=num_layers
+        )
+
+    def forward(self, src, src_pad_mask=None):
+        return self.encoder(src, src_key_padding_mask=src_pad_mask)
+
+class Decoder(nn.Module):
+    def __init__(self, d_model, nhead, num_layers, dropout):
+        super(Decoder, self).__init__()
+        decoder_layers = nn.TransformerDecoderLayer(d_model=d_model, nhead=nhead, dropout=dropout, batch_first=True)
+        self.decoder = nn.TransformerDecoder(decoder_layers, num_layers=num_layers)
+
+    def forward(self, tgt, memory, tgt_mask=None, tgt_pad_mask=None, memory_pad_mask=None):
+        return self.decoder(tgt, memory, tgt_mask=tgt_mask, tgt_key_padding_mask=tgt_pad_mask, memory_key_padding_mask=memory_pad_mask)
+
+class PositionalEncoding(nn.Module):
+    def __init__(self, d_model: int, dropout: float=0.1, max_len: int=1400):
+        super(PositionalEncoding, self).__init__()
         self.dropout = nn.Dropout(p=dropout)
-        pe = torch.zeros(max_len, d_model)  # like 10x4
+        pe = torch.zeros(max_len, d_model)
         position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
         div_term = torch.exp(torch.arange(0, d_model, 2).float() * (-np.log(10_000.0) / d_model))
         pe[:, 0::2] = torch.sin(position * div_term)
         pe[:, 1::2] = torch.cos(position * div_term)
-        pe = pe.unsqueeze(0).transpose(0, 1)
-        self.register_buffer('pe', pe)  # allows state-save
+        pe = pe.unsqueeze(0)
+        self.register_buffer('pe', pe)
     
     def forward(self, x):
-        x = x + self.pe[:x.size(0), :]
+        x = x + self.pe[:, :x.size(1), :]
         return self.dropout(x)
     
 if __name__ == "__main__":

@@ -124,7 +124,8 @@ def quantize_to_grid(ticks_time, ticks_duration, ticks_per_beat, grids_per_bar):
 
 TIMESIGN={'[2, 2]': 0, '[2, 4]': 1, '[3, 4]': 2, '[4, 4]': 3, '[5, 4]': 4, '[6, 4]': 5, '[5, 8]': 6, '[6, 8]': 7, '[7, 8]': 8, '[9, 8]': 9}
 TPB = {48: 0, 96: 1, 120: 2, 192: 3, 256: 4, 384: 5, 480: 6, 960: 7, 1024: 8}
-def midi_to_REMI(mid, grids_per_bar, SOS_ind=0, bar_ind=5, pos_ind=6, pitch_ind=38, duration_ind=130, timesign_ind=162, tpb_ind=172, EOS_ind=182):
+def midi_to_REMI(mid, grids_per_bar, SOS_ind=0, bar_ind=5, pos_ind=6, pitch_ind=38, 
+                 duration_ind=128, timesign_ind=160, tpb_ind=170, EOS_ind=180):
     """
     Extracts the notes and chords from a MIDI file and returns a list of tokens in the REMI format.
 
@@ -134,11 +135,11 @@ def midi_to_REMI(mid, grids_per_bar, SOS_ind=0, bar_ind=5, pos_ind=6, pitch_ind=
         - 5: Bar
         - 6-37: Position, 32 values
         - 38-127: Pitch, 90 values [20-109]
-        - 130-161: Duration, 32 values
-        - 162-171: Time signature, 10 values
-        - 172-180: Ticks per beat, 9 values
-        - 181: Padding
-        - 182: End of sequence
+        - 128-159: Duration, 32 values
+        - 160-169: Time signature, 10 values
+        - 170-178: Ticks per beat, 9 values
+        - 179: Padding
+        - 180: End of sequence
     """
     ticks_per_beat = mid.ticks_per_beat
 
@@ -167,7 +168,7 @@ def midi_to_REMI(mid, grids_per_bar, SOS_ind=0, bar_ind=5, pos_ind=6, pitch_ind=
             current_bar = bar
 
         position_token = position + pos_ind
-        pitch_token = event['note'] - 20 + pitch_ind # 20 is minimum pitch, 33 is the offset
+        pitch_token = event['note'] - 20 + pitch_ind # 20 is minimum pitch, pitch_ind is the offset
         duration_token = duration + duration_ind 
         try: 
             tokens.append(position_token)
@@ -262,7 +263,11 @@ def create_datasets(midi_paths, emotion_df, grids_per_bar, output_path, filename
 
     save_file = os.path.join(output_path, f"{filename}.pkl")
     save_to_pickle(all_tokens, save_file)
-
+    save_txt = os.path.join(output_path, f"{filename}.txt")
+    # with open(save_txt, 'w') as f:
+    #     for tokens in all_tokens:
+    #         f.write(f"{tokens}\n")
+    
 
 if __name__ == '__main__':
     config_path = './src/config/default.yaml'

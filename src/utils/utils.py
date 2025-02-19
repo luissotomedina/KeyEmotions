@@ -1,7 +1,12 @@
 import os
+import csv
 import json
 import pickle
 import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+from torch import save as torch_save
 
    
 def load_json(filename, file_path):
@@ -38,6 +43,12 @@ def save_to_json(data, output_path):
     with open(output_path, 'w') as f:
         json.dump(data, f, indent=4)
         print(f"Data saved to {output_path}")
+
+def save_plot(plt, output_path, filename):
+    os.makedirs(output_path, exist_ok=True)
+    plt.savefig(os.path.join(output_path, filename))
+    print(f'Plot saved to {output_path}{filename}')
+    plt.close()
 
 def load_pickle(file_path):
     """
@@ -92,3 +103,106 @@ def save_metadata(metadata_list, output_path, is_midi=True):
     with open(output_path, 'w') as f:
         json.dump(metadata_dict, f, indent=4)
         print(f"Metadata saved to {output_path}")
+
+def create_exp_environment(experiments_dir):
+    try:
+        os.mkdir(experiments_dir)
+    except:
+        pass
+
+    num_experiments = len(os.listdir(experiments_dir))
+
+    if num_experiments == 0:
+        exp_idx = 1
+    else:
+        exp_idx = num_experiments + 1
+
+    exp_name = f"exp_{exp_idx}"
+
+    exp_folder = os.path.join(experiments_dir, exp_name)
+
+    generation_folder = os.path.join(exp_folder, "generations")
+    logs_folder = os.path.join(exp_folder, "logs")
+    plots_folder = os.path.join(exp_folder, "plots")
+
+    try:
+        os.mkdir(exp_folder)
+        with open(os.path.join(exp_folder, "notes.txt"), "w") as f:
+            pass
+    except:
+        pass
+    try:
+        os.mkdir(generation_folder)
+        with open(os.path.join(generation_folder, "generations.txt"), "w") as f:
+            pass
+    except:
+        pass
+    try:
+        os.mkdir(logs_folder)
+    except:
+        pass
+    try:
+        os.mkdir(plots_folder)
+    except:
+        pass
+
+    return exp_folder, logs_folder, exp_name
+
+def save_exp_environment(exp_dir, model, config):
+    weights_fn = os.path.join(exp_dir, "weigths.pt")
+    config_fn = os.path.join(exp_dir, "config.json")
+    torch_save(model.state_dict(), weights_fn)
+    save_to_json(config, config_fn)
+    print(f"Experiment environment saved to {exp_dir}")
+
+def plot_progress(df, column, exp_name, mode="training"):
+    sns.set_palette("muted")
+    plt.subplots(figsize=(10, 5))
+
+    if mode == "training":
+        df.sort_values(by=["epoch", "batches"], inplace=True)
+        x = df.index
+        xlabel = "Iterations"
+    else:
+        x = df.epoch
+        xlabel = "Epoch"
+    
+    plt.plot(x, df[column], label=column)
+    plt.xlabel(xlabel)
+    plt.ylabel(column)
+    plt.title(f"{mode.capitalize()} {column} {exp_name}")
+    plt.grid()
+
+    filename = f"{exp_name}_{mode}_{column}.png"
+    save_path = f"./experiments/{exp_name}/plots/"
+    save_plot(plt, save_path, filename)
+
+def plot_loss(train_epoch_loss, val_epoch_loss, exp_name):
+    for mode, epoch_loss in zip(["training", "validation"], [train_epoch_loss, val_epoch_loss]):
+        sns.set_palette("muted")
+        plt.subplots(figsize=(10, 5))
+
+        plt.plot(epoch_loss, label="loss")
+        plt.xlabel("Epoch")
+        plt.ylabel("Loss")
+        plt.title(f"{mode.capitalize()} Loss {exp_name}")
+        plt.grid()
+
+        filename = f"{exp_name}_epoch_loss_{mode}.png"
+        save_path = f"./experiments/{exp_name}/plots/"
+        save_plot(plt, save_path, filename)
+
+class LogsWriter:
+    def __init__(self, output_path, columns):
+        self.output_path = output_path
+        self.columns = columns
+
+        with open(output_path, 'w') as f: 
+            writer = csv.DictWriter(f, fieldnames=self.columns)
+            writer.writeheader()
+
+    def update(self, dict_data):
+        with open(self.output_path, 'a') as f:
+            writer = csv.DictWriter(f, fieldnames=self.columns)
+            writer.writerow(dict_data)
+        
