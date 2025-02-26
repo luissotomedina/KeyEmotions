@@ -5,8 +5,16 @@ import os
 import sys
 import numpy as np
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from preprocessing.loader import Loader
+def init_weights(model):
+    # print(f"Initializing weights for {model.__class__.__name__}")
+    if isinstance(model, (nn.Linear, nn.Embedding)):
+        nn.init.xavier_uniform_(model.weight)
+
+    if isinstance(model, nn.Linear) and model.bias is not None:
+        nn.init.zeros_(model.bias)
+
+def subsequent_mask(size):
+    return torch.triu(torch.ones(size, size), diagonal=1).bool()
 
 class TransformerNet(nn.Module):
     def __init__(self, vocab_size, d_model, nhead, num_layers, dropout=0.1):
@@ -17,16 +25,20 @@ class TransformerNet(nn.Module):
         self.decoder = Decoder(d_model, nhead, num_layers, dropout)
         self.fc_out = nn.Linear(d_model, vocab_size)
         self.norm = nn.LayerNorm(d_model)
+        self.dropout = nn.Dropout(dropout)
+        self.apply(init_weights)
         
     def forward(self, src, tgt, tgt_mask, src_pad_mask=None, tgt_pad_mask=None):
         src = self.embedding(src)
         src = self.pos_enc(src)
         src = self.norm(src)
+        src = self.dropout(src)
         memory = self.encoder(src, src_pad_mask=src_pad_mask)
         
         tgt = self.embedding(tgt)
         tgt = self.pos_enc(tgt)
         tgt = self.norm(tgt)
+        tgt = self.dropout(tgt)
         
         z = self.decoder(tgt, memory, tgt_mask=tgt_mask, tgt_pad_mask=tgt_pad_mask, memory_pad_mask=src_pad_mask)
         return self.fc_out(z)
@@ -72,7 +84,7 @@ class PositionalEncoding(nn.Module):
 if __name__ == "__main__":
     dummy_input = torch.randint(0, 12, (2, 10))
     dummy_tgt = torch.randint(0, 12, (2, 9))
-    dummy_tgt_mask = torch.ones(9, 9).triu(1) == 0
+    dummy_tgt_mask = subsequent_mask(dummy_tgt.size(1))
     dummy_src_pad_mask = (dummy_input == 0)
     dummy_tgt_pad_mask = (dummy_tgt == 0)
 

@@ -11,15 +11,15 @@ from utils.utils import *
 from models.Transformer import *
 from preprocessing.loader import Loader
 
-def subsequent_mask(size):
-    # mask = torch.ones(size, size)
-    attn_shape = (size, size)
-    subsequent_mask = np.triu(np.ones(attn_shape), k=1).astype('uint8')
-    return torch.from_numpy(subsequent_mask) == 0
+# def subsequent_mask(size):
+#     # mask = torch.ones(size, size)
+#     attn_shape = (size, size)
+#     subsequent_mask = np.triu(np.ones(attn_shape), k=1).astype('uint8')
+#     return torch.from_numpy(subsequent_mask) == 0
 
 def train_iter(model, train_ldr, device, lr, total_batches, epoch, loss_func, 
                optimizer, scaler, logs_train, pad_idx, log_interval=10):
-    model.train()
+    # model.train()
     epoch_loss = 0
     batches_loss = 0
 
@@ -33,35 +33,27 @@ def train_iter(model, train_ldr, device, lr, total_batches, epoch, loss_func,
 
         tgt_input = tgt[:, :-1] # remove EOS token
         tgt_expected = tgt[:, 1:] # remove SOS token
-        tgt_mask = subsequent_mask(tgt_input.size(1)).to(device).bool()
-
+        tgt_mask = subsequent_mask(tgt_input.size(1)).to(device)
         # Create padding masks
         src_pad_mask = (src == pad_idx).to(device)  # Shape: [batch_size, src_len], True if pad_idx
         tgt_pad_mask = (tgt_input == pad_idx).to(device) # Shape: [batch_size, tgt_len], True if pad_idx
 
+        optimizer.zero_grad()
         with torch.amp.autocast(device_type='cuda'):
             prediction = model(src, tgt_input, tgt_mask, src_pad_mask, tgt_pad_mask) # [batch_size, seq_len, vocab_size]
             # reshape predictions shape to [batch_size*seq_len, vocab_size] = tgt_expected
-            prediction = prediction.reshape(-1, prediction.shape[-1]) # [batch_size*seq_len, vocab_size]
+            # prediction = prediction.reshape(-1, prediction.shape[-1]) # [batch_size*seq_len, vocab_size]
+            prediction = prediction.view(-1, vocab_size)
             tgt_expected = tgt_expected.reshape(-1) # [batch_size*seq_len]
-            # prediction = prediction.permute(0, 2, 1) # [batch_size, vocab_size, seq_len]
-            # prediction = prediction.reshape(-1, prediction.shape[-1])
+            # tgt_expected = tgt_expected.view(-1)
             loss_val = loss_func(prediction, tgt_expected) # [batch_size*seq_len, vocab_size] vs [batch_size*seq_len]
 
-        # prediction = model(src, tgt_input, tgt_mask, src_pad_mask, tgt_pad_mask) # [batch_size, seq_len, vocab_size]
-        #     # reshape predictions shape to [batch_size*seq_len, vocab_size] = tgt_expected
-        # prediction = prediction.reshape(-1, prediction.shape[-1]) # [batch_size*seq_len, vocab_size]
-        # tgt_expected = tgt_expected.reshape(-1) # [batch_size*seq_len]
-        #     # prediction = prediction.permute(0, 2, 1) # [batch_size, vocab_size, seq_len]
-        #     # prediction = prediction.reshape(-1, prediction.shape[-1])
-        # loss_val = loss_func(prediction, tgt_expected) # [batch_size*seq_len, vocab_size] vs [batch_size*seq_len]
-        
-        batches_loss += loss_val.item()
-
         scaler.scale(loss_val).backward()
+        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0) # to avoid exploding gradient, 0.5 or 1.0
         scaler.step(optimizer)
         scaler.update()
-        optimizer.zero_grad()
+
+        batches_loss += loss_val.item()
 
         if batch_idx % log_interval == 0:
             epoch_loss += batches_loss
@@ -111,16 +103,15 @@ def evaluate(model, val_ldr, device, epoch, loss_func, logs_val, pad_idx):
     return epoch_loss
 
 def train(model, train_ldr, val_ldr, max_epochs, device, lr, logs_train, logs_val, exp_name, pad_idx):
+    model.train()
 
-    optimizer = optim.Adam(model.parameters(), lr=lr)
-
+    optimizer = optim.Adam(model.parameters(), lr=lr, betas=(0.9, 0.98)) # reduce lr if no improvement
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.1) # reduce lr
-    
     scaler = torch.amp.GradScaler(device)
-    
+
     ce_loss = nn.CrossEntropyLoss(ignore_index=pad_idx).to(device)
-    mse_loss = nn.MSELoss()
-    l1_loss = nn.L1Loss()
+    # mse_loss = nn.MSELoss()
+    # l1_loss = nn.L1Loss()
 
     total_batches = len(train_ldr)
 
@@ -154,7 +145,7 @@ if __name__ == "__main__":
 
         # TRAINING PARAMETERS
         max_epochs = config['training']['max_epochs']
-        max_epochs = 2
+        # max_epochs = 2
         batch_size = config['training']['batch_size']
         lr = config['training']['lr']
         experiments_dir = config['training']['experiments_dir']

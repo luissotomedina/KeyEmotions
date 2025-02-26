@@ -24,9 +24,6 @@ class Loader:
         self.pad_idx = 179
         self.eos_idx = 180
 
-    # def number_of_tokens_with_padding(self):
-    #     return self.number_of_tokens + 1  # Ensure padding is accounted for
-
     def create_training_dataset(self):
         dataset = self._load_dataset()
         if not dataset:
@@ -63,6 +60,7 @@ class Loader:
         dataset = TensorDataset(input_tensors)
         dataloader = DataLoader(dataset, batch_size=self.batch_size, shuffle=shuffle, drop_last=drop_last)
         return dataloader, input_tensors
+    
     
 
 if __name__ == '__main__':

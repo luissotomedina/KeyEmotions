@@ -141,7 +141,7 @@ if __name__ == "__main__":
 
     # Load trained model
     # exp_num = len(os.listdir(experiments_dir))
-    exp_num = 5
+    exp_num = 6
     exp_name = f"exp_{exp_num}"
     weigths_path = os.path.join(experiments_dir, exp_name, "weigths.pt")
     generations_path = os.path.join(experiments_dir, exp_name, "generations")
