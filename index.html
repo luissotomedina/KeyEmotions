@@ -6,40 +6,25 @@
     <title>Resultados MIDI - TFM</title>
     <!-- Incluye la librería html-midi-player -->
     <script src="https://cdn.jsdelivr.net/combine/npm/tone@14.7.58,npm/@magenta/music@1.23.1/es6/core.js,npm/focus-visible@5,npm/html-midi-player@1.4.0"></script>
-
 </head>
 <body>
-    <h1>Test MIDI de mi TFM</h1>
-    <p>Aquí puedes escuchar los archivos MIDI generados:</p>
-
-    <!-- Reproductor MIDI para cada archivo -->
+    <h1 id="generated-melody">Generated melody</h1>
 
     <h4 id="example-1">Example 1</h4>
     <div>
         <midi-visualizer 
             type="piano-roll" 
             id="mainVisualizer" 
-            src="https://luissotomedina.github.io/KeyEmotions/test_midi/1_generation.mid">
+            src="test_midi/0_generation.mid">
         </midi-visualizer>
         <midi-player 
-            src="https://luissotomedina.github.io/KeyEmotions/test_midi/1_generation.mid" 
+            src="test_midi/0_generation.mid" 
             sound-font 
             visualizer="#mainVisualizer">
         </midi-player>
     </div>
     <p><br /></p>
 
-    <!-- <h2>Archivo 2</h2>
-    <midi-player
-        src="test_midi/1_generation.mid"
-        sound-font visualizer="#myPianoRollVisualizer">
-    </midi-player>
-
-    <midi-visualizer 
-        type="piano-roll" id="myPianoRollVisualizer1" 
-        src="test_midi/1_generation.mid">
-    </midi-visualizer> -->
-
-    <!-- Puedes agregar más archivos según sea necesario -->
+    <!-- Puedes agregar más ejemplos según sea necesario -->
 </body>
 </html>
