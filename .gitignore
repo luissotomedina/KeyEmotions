@@ -1,8 +1,9 @@
-*.mid
+
 *.csv
 *.png
 *.pyc
 old/
+data/
 Simplest_example/
 __pycache__/
 structure.txt
