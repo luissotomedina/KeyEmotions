@@ -59,7 +59,9 @@ class Encoder(nn.Module):
 class Decoder(nn.Module):
     def __init__(self, d_model, nhead, num_layers, dropout):
         super(Decoder, self).__init__()
-        decoder_layers = nn.TransformerDecoderLayer(d_model=d_model, nhead=nhead, dropout=dropout, batch_first=True)
+        decoder_layers = nn.TransformerDecoderLayer(
+            d_model=d_model, nhead=nhead, dropout=dropout, batch_first=True
+        )
         self.decoder = nn.TransformerDecoder(decoder_layers, num_layers=num_layers)
 
     def forward(self, tgt, memory, tgt_mask=None, tgt_pad_mask=None, memory_pad_mask=None):

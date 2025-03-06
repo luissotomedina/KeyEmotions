@@ -7,3 +7,5 @@ Simplest_example/
 __pycache__/
 structure.txt
 experiments/
+LLama3.2-1B-Instruct/
+huggingface_token.txt

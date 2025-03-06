@@ -1,11 +1,9 @@
 import pickle
-import os
-import numpy as np
 
 import torch
-from torch.utils.data import DataLoader, TensorDataset
+from torch.utils.data import DataLoader, Dataset
 
-class Loader:
+class Loader(Dataset): # Inherit from PyTorch Dataset class
     def __init__(self, tokenized_data_path, batch_size):
         self.tokenized_data_path = tokenized_data_path
         self.batch_size = batch_size
@@ -13,6 +11,7 @@ class Loader:
         self.number_of_tokens = 0
         self.vocab_size = 0
 
+        # Token indices
         self.sos_idx = 0
         self.emotion_idx = 1
         self.bar_idx = 5
@@ -24,30 +23,28 @@ class Loader:
         self.pad_idx = 179
         self.eos_idx = 180
 
-    def create_training_dataset(self):
-        dataset = self._load_dataset()
-        if not dataset:
+        # Load and preprocess dataset
+        self.data = self._load_dataset()
+        if not self.data:
             raise ValueError("Dataset is empty! Check your tokenized data path.")
         
-        self._set_max_len(dataset)
-        padded_dataset = [self._pad_sequence(song) for song in dataset]
-        self._set_vocab_size(padded_dataset)
-        self._set_number_of_tokens(padded_dataset)  # Includes padding token
-
-        return self._create_dataloader(padded_dataset)
+        self._set_max_len()
+        self.padded_data = [self._pad_sequence(song) for song in self.data]
+        self._set_vocab_size()
+        self._set_number_of_tokens() 
 
     def _load_dataset(self):
         with open(self.tokenized_data_path, 'rb') as f:
             return pickle.load(f)
 
-    def _set_max_len(self, songs):
-        self.max_len = max((len(song) for song in songs), default=0)  # Handles empty list safely
+    def _set_max_len(self):
+        self.max_len = max((len(song) for song in self.data), default=0)  # Handles empty list safely
 
-    def _set_number_of_tokens(self, songs):
-        self.number_of_tokens = len(set(token for song in songs for token in song))
+    def _set_number_of_tokens(self):
+        self.number_of_tokens = len(set(token for song in self.data for token in song))
         
-    def _set_vocab_size(self, songs):
-        self.vocab_size = max(max(song) for song in songs) + 1
+    def _set_vocab_size(self):
+        self.vocab_size = max(max(song) for song in self.data) + 1
 
     def _pad_sequence(self, sequence):
         eos_token = sequence[-1]
@@ -55,13 +52,23 @@ class Loader:
         
         return remi_token + [self.pad_idx] * (self.max_len - len(sequence)) + [eos_token] # Ensure last token is not padded, EOS token
 
-    def _create_dataloader(self, input_sequences, shuffle=True, drop_last=True):
-        input_tensors = torch.tensor(input_sequences, dtype=torch.int64)
-        dataset = TensorDataset(input_tensors)
-        dataloader = DataLoader(dataset, batch_size=self.batch_size, shuffle=shuffle, drop_last=drop_last)
-        return dataloader, input_tensors
+    def __len__(self):
+        return len(self.data)
     
-    
+    def __getitem__(self, idx):
+        sequence = self.padded_data[idx]
+        input_sequence = sequence[:-1]
+        output_sequence = sequence[1:]
+        return torch.tensor(input_sequence, dtype=torch.int64), \
+                torch.tensor(output_sequence, dtype=torch.int64)
+
+    def create_dataloader(self, shuffle=True, drop_last=True):
+        return DataLoader(
+            dataset=self,
+            batch_size=self.batch_size,
+            shuffle=shuffle,
+            drop_last=drop_last
+        ) 
 
 if __name__ == '__main__':
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu') 
@@ -69,16 +76,14 @@ if __name__ == '__main__':
         tokenized_data_path='./data/prepared/train.pkl',
         batch_size=32
     )
-    input_ldr, input_tensors = data_loader.create_training_dataset()
+    train_ldr = data_loader.create_dataloader(
+        shuffle=True,
+        drop_last=True
+    )
 
-    input_tensors = input_tensors.to(device)
-
-    print("Vocab size:", data_loader.vocab_size)
-    print("Number of tokens:", data_loader.number_of_tokens)
-    print("Max sequence length:", data_loader.max_len)
-
-    for batch_idx, batch in enumerate(input_ldr):
-        batch_data = batch[0].to(device)  # Move batch to GPU if available
-        print("Batch shape:", batch_data.shape)  # Expected: (batch_size, max_len)
-        print("First sample in batch:", batch_data[0])  # Print one sample
-        break  # Stop after first batch
+    for input_seq, output_seq in train_ldr:
+        print("Input shape:", input_seq.shape)
+        print("Input sequence:", input_seq[0])
+        print("Output shape:", output_seq.shape)
+        print("Output sequence:", output_seq[0])    
+        break

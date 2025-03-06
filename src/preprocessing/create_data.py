@@ -69,7 +69,6 @@ def data_augmentation(midi, output_path, n_transpose=3):
             transposed_midi_path = os.path.join(output_path, transposed_midi_name)
             transposed_midi.save(transposed_midi_path)
 
-
 def extract_notes_and_chords(mid):
     events = []
     note_start_times = {}
@@ -103,9 +102,11 @@ def extract_notes_and_chords(mid):
 
     return sorted(events, key=lambda x: x['time']), time_signature
 
-def quantize_to_grid(ticks_time, ticks_duration, ticks_per_beat, grids_per_bar):
-    ticks_per_grid = (ticks_per_beat * 4) // grids_per_bar
-    ticks_per_bar = ticks_per_beat * 4
+def quantize_to_grid(ticks_time, ticks_duration, ticks_per_beat, grids_per_bar, time_signature):
+    ticks_per_bar =  calculate_ticks_per_bar(time_signature, ticks_per_beat)
+    ticks_per_grid = ticks_per_bar // grids_per_bar
+    # ticks_per_grid = (ticks_per_beat * 4) // grids_per_bar
+    # ticks_per_bar = ticks_per_beat * 4
 
     # Quantize the start time
     quantized_time = round(ticks_time / ticks_per_grid) * ticks_per_grid
@@ -162,7 +163,7 @@ def midi_to_REMI(mid, grids_per_bar, SOS_ind=0, bar_ind=5, pos_ind=6, pitch_ind=
     tokens.append(time_signature_token)
 
     for event in events:
-        bar, position, duration = quantize_to_grid(event['time'], event['duration'], ticks_per_beat, grids_per_bar)
+        bar, position, duration = quantize_to_grid(event['time'], event['duration'], ticks_per_beat, grids_per_bar, time_signature)
         if current_bar is None or bar > current_bar:
             tokens.append(bar_ind)
             current_bar = bar
@@ -263,7 +264,7 @@ def create_datasets(midi_paths, emotion_df, grids_per_bar, output_path, filename
 
     save_file = os.path.join(output_path, f"{filename}.pkl")
     save_to_pickle(all_tokens, save_file)
-    save_txt = os.path.join(output_path, f"{filename}.txt")
+    # save_txt = os.path.join(output_path, f"{filename}.txt")
     # with open(save_txt, 'w') as f:
     #     for tokens in all_tokens:
     #         f.write(f"{tokens}\n")

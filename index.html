@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resultados MIDI - TFM</title>
+    <!-- Incluye la librería html-midi-player -->
+    <script src="https://cdn.jsdelivr.net/combine/npm/tone@14.7.58,npm/@magenta/music@1.23.1/es6/core.js,npm/focus-visible@5,npm/html-midi-player@1.4.0"></script>
+
+</head>
+<body>
+    <h1>Test MIDI de mi TFM</h1>
+    <p>Aquí puedes escuchar los archivos MIDI generados:</p>
+
+    <!-- Reproductor MIDI para cada archivo -->
+    <h2>Archivo 1</h2>
+    <midi-player
+        src="test_midi/0_generation.mid"
+        sound-font visualizer="#myPianoRollVisualizer">
+    </midi-player>
+
+    <midi-visualizer 
+        type="piano-roll" id="myPianoRollVisualizer" 
+        src="test_midi/0_generation.mid">
+    </midi-visualizer>
+
+    <!-- <h2>Archivo 2</h2>
+    <midi-player
+        src="test_midi/1_generation.mid"
+        sound-font visualizer="#myPianoRollVisualizer">
+    </midi-player>
+
+    <midi-visualizer 
+        type="piano-roll" id="myPianoRollVisualizer1" 
+        src="test_midi/1_generation.mid">
+    </midi-visualizer> -->
+
+    <!-- Puedes agregar más archivos según sea necesario -->
+</body>
+</html>

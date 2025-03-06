@@ -79,7 +79,7 @@ def REMI_to_midi(remi_seq, grids_per_bar=32, SOS_ind=0, bar_ind=5, pos_ind=6, pi
     mid.ticks_per_beat = ticks_per_beat
     return mid    
 
-def generate_sequence(model, d_model, token, device, max_bar = 8, max_len=1300, sos_token=0, eos_token=182, pad_idx=181, bar_token=5):
+def generate_sequence(model, d_model, token, device, temperature, max_bar = 8, max_len=1300, sos_token=0, eos_token=182, pad_idx=181, bar_token=5):
     model.eval()
     # generated = torch.tensor([[sos_token, token]], device=device)
     generated = torch.tensor([[token]], device=device)
@@ -96,7 +96,12 @@ def generate_sequence(model, d_model, token, device, max_bar = 8, max_len=1300, 
         output = model.decoder(tgt_emb, memory=memory, tgt_mask=tgt_mask)
 
         logits = model.fc_out(output[:, -1, :])
-        next_token = torch.argmax(logits, dim=-1).unsqueeze(0)
+
+        logits = logits / temperature
+
+        probs = torch.softmax(logits, dim=-1)
+        # next_token = torch.argmax(logits, dim=-1).unsqueeze(0)
+        next_token = torch.multinomial(probs, num_samples=1)
 
         if next_token.item() == bar_token:
             bars += 1
@@ -119,9 +124,19 @@ def save_generations(generation, path):
 
 
 if __name__ == "__main__":
-    config_path = './src/config/default.yaml'
-    config = yaml.load(open(config_path, 'r'), Loader=yaml.FullLoader)
+    exp_num = 7
+    exp_name = f"exp_{exp_num}"
 
+    experiments_dir = './experiments'
+    config_path = os.path.join(experiments_dir, exp_name, "config.json")
+    weigths_path = os.path.join(experiments_dir, exp_name, "weigths.pt")
+    generations_path = os.path.join(experiments_dir, exp_name, "generations")
+
+    with open(config_path, "r", encoding="utf-8") as json_file:
+        config = json.load(json_file)
+
+    # config = yaml.load(open(config_path, 'r'), Loader=yaml.FullLoader)
+    
     # MODEL PATH
     experiments_dir = config['training']['experiments_dir']
 
@@ -129,22 +144,20 @@ if __name__ == "__main__":
     vocab_size = config['model']['vocab_size']
     d_model = config['model']['d_model']
     nhead = config['model']['n_head']
+    d_ff = config['model']['d_ff']
     num_layers = config['model']['num_layers']
     max_epochs = config['training']['max_epochs']
     batch_size = config['training']['batch_size']
+    
+    temperature = config['generate']['temperature']
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
     # Create model
     print("\nCreating new Transformer seq-to-seq model")
-    model = TransformerNet(vocab_size, d_model, nhead, num_layers).to(device)
+    model = TransformerNet(vocab_size, d_model, nhead, num_layers,).to(device)
 
     # Load trained model
-    # exp_num = len(os.listdir(experiments_dir))
-    exp_num = 6
-    exp_name = f"exp_{exp_num}"
-    weigths_path = os.path.join(experiments_dir, exp_name, "weigths.pt")
-    generations_path = os.path.join(experiments_dir, exp_name, "generations")
     print(f"\nLoading trained model state from {exp_name}")
     model.load_state_dict(torch.load(weigths_path, map_location=device, weights_only=True))
 

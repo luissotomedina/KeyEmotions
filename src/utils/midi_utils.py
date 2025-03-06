@@ -63,3 +63,12 @@ def more_than_one_time_signature(mid):
     """
     time_signatures = {(msg.numerator, msg.denominator) for track in mid.tracks for msg in track if msg.type == 'time_signature'}
     return len(time_signatures) > 1
+
+def calculate_ticks_per_bar(time_signature, ticks_per_beat):
+    if time_signature[1] == 8 and time_signature[0] % 3 == 0:
+        f = 3 # Compound time signature
+    else:
+        f = 1 # Simple time signature
+    
+    ticks_per_bar = ticks_per_beat * (time_signature[0] / f)
+    return ticks_per_bar
