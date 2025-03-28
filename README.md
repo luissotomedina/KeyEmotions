@@ -4,6 +4,8 @@ KeyEmotions is a music generation system that combines emotional expression with
 
 This project is the **final thesis for a Master's degree in Artificial Intelligence**, created as part of the academic requirements to complete the degree. The system aims to explore the intersection of emotional expression and artificial intelligence in music creation.
 
+The project was developed using **Python 3.12.8**.
+
 ## Features
 
 - **Emotion-based Music Generation**: Select an emotion from a predefined set (e.g., Angry, Excited, Sad, Calm) to generate music based on that emotion.
