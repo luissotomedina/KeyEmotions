@@ -23,33 +23,24 @@ data:
 model:
     n_head:              8
     d_model:             128
-    d_ff:                2048
+    d_ff:                512
     num_layers:          6
     max_seq_len:         1400
     vocab_size:          181 
-    dropout:             0.1
+    dropout:             0.3
 
 training:
-    lr:               0.0005
-    batch_size:       16
-    max_epochs:       10
-    experiments_dir:   ./experiments
-
-    max_lr:           1.0e-4
-    min_lr:           5.0e-6
-    lr_decay_steps:   150000    
-    ckpt_dir:         ./ckpt/enc_dec_12L-16_bars-seqlen_1280
-    trained_steps:    0
-    lr_warmup_steps:  200
-    no_kl_steps:      10000
-    kl_cycle_steps:   5000
-    kl_max_beta:      1.0
-    free_bit_lambda:  0.25
-    constant_kl:      False
-    ckpt_interval:    50
-    log_interval:     10
-    val_interval:     50
+    lr:                             0.0005
+    batch_size:                     24
+    max_epochs:                     20
+    experiments_dir:                ./experiments
+    gradient_accumulation_steps:    2
+    patience:                       8
+    warmup_proportion:              0.1
+    min_lr:                         0.00001
+    max_grad_norm:                  1.0
+    weight_decay:                   0.005
 
 generate:
     temperature:                0.7
-    max_input_dec_seqlen:       1024     # should be set to equal to or less than `dec_seqlen` used during training
+    max_seqlen:                 1300

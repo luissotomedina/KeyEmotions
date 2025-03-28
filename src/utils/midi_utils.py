@@ -1,6 +1,6 @@
 import os
-import sys
-import mido
+import time
+import fluidsynth
 
 def save_midi(mid, output_path):
     """
@@ -72,3 +72,18 @@ def calculate_ticks_per_bar(time_signature, ticks_per_beat):
     
     ticks_per_bar = ticks_per_beat * (time_signature[0] / f)
     return ticks_per_bar
+
+def midi_to_wav(midi_file, soundfont, output_wav):
+    print(f"Converting {midi_file} to {output_wav}")
+    fs = fluidsynth.Synth()
+    fs.start(driver="dsound") # Windows, use "alsa" for Linux
+    
+    sfid = fs.sfload(soundfont)
+    fs.program_select(0, sfid, 0, 0)
+    
+    fs.midi_file_play(midi_file)
+    time.sleep(2)
+
+    fs.audio_file(output_wav)
+    
+    fs.delete()

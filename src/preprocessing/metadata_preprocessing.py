@@ -1,5 +1,3 @@
-import os
-import json
 import pandas as pd
 
 def load_metadata(metadata_path):

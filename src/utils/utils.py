@@ -192,6 +192,23 @@ def plot_loss(train_epoch_loss, val_epoch_loss, exp_name):
         save_path = f"./experiments/{exp_name}/plots/"
         save_plot(plt, save_path, filename)
 
+def plot_accuracy(train_epoch_acc, val_epoch_acc, exp_name, metric_name):
+    sns.set_palette("muted")
+    plt.figure(figsize=(10, 5))
+
+    plt.plot(train_epoch_acc, label=f"Training {metric_name}")
+    plt.plot(val_epoch_acc, label=f"Validation {metric_name}")
+    plt.xlabel("Epoch")
+    plt.ylabel(metric_name)
+    plt.title(f"Training and Validation {metric_name} ({exp_name})")
+    plt.legend()
+    plt.grid()
+
+    filename = f"{exp_name}_epoch_{metric_name.lower().replace(' ', '_')}.png"
+    save_path = f"./experiments/{exp_name}/plots/"
+    save_plot(plt, save_path, filename)
+    
+
 class LogsWriter:
     def __init__(self, output_path, columns):
         self.output_path = output_path

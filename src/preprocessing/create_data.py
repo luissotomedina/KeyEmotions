@@ -1,8 +1,6 @@
 import os
 import sys
 import yaml
-import pickle
-import numpy as np
 from pathlib import Path
 from random import shuffle
 from mido import MidiFile, MidiTrack

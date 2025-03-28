@@ -1,204 +1,235 @@
 import os
 import time
 import yaml
+import random
 import traceback
-
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-
 from utils.utils import *
-from models.Transformer import *
+from models.KeyEmotions import *
 from preprocessing.loader import Loader
 
-# def subsequent_mask(size):
-#     # mask = torch.ones(size, size)
-#     attn_shape = (size, size)
-#     subsequent_mask = np.triu(np.ones(attn_shape), k=1).astype('uint8')
-#     return torch.from_numpy(subsequent_mask) == 0
+class Trainer:
+    def __init__(self, config_path, device):
+        self.config = yaml.load(open(config_path, 'r'), Loader=yaml.FullLoader)
+        self.device = device
+        self.set_seeds()
+        self.load_data()
+        self.initialize_model()
 
-def train_iter(model, train_ldr, device, lr, total_batches, epoch, loss_func, 
-               optimizer, scaler, logs_train, pad_idx, log_interval=10):
-    # model.train()
-    epoch_loss = 0
-    batches_loss = 0
+    def set_seeds(self):
+        random.seed(42)
+        np.random.seed(42)
+        torch.manual_seed(42)
+        torch.cuda.manual_seed_all(42)
 
-    print("-" * 89)
+    def load_data(self):
+        train_midi_path = self.config['data']['prepared']['train_data']
+        validation_midi_path = self.config['data']['prepared']['val_data']
+        batch_size = self.config['training']['batch_size']
+
+        self.data_loader_train = Loader(tokenized_data_path=train_midi_path, batch_size=batch_size)
+        self.train_ldr = self.data_loader_train.create_dataloader(shuffle=True, drop_last=True)
+
+        self.data_loader_val = Loader(tokenized_data_path=validation_midi_path, batch_size=batch_size)
+        self.val_ldr = self.data_loader_val.create_dataloader(shuffle=True, drop_last=True)
+
+        self.vocab_size = self.data_loader_train.vocab_size
+        self.pad_idx = self.data_loader_train.pad_idx
+
+    def initialize_model(self):
+        self.model = KeyEmotions(
+            vocab_size=self.vocab_size,
+            d_model=self.config['model']['d_model'],
+            nhead=self.config['model']['n_head'],
+            num_layers=self.config['model']['num_layers'],
+            d_ff=self.config['model']['d_ff'],
+            dropout=self.config['model']['dropout'],
+        ).to(self.device)
+
+    def calculate_topk_accuracy(self, output, tgt, topk=(1, 5)):
+        batch_size, seq_len, vocab_size = output.size()
+        maxk = max(topk)
+        if maxk > vocab_size:
+            raise ValueError("topk is larger than vocab_size")
+        output = output.view(-1, vocab_size)
+        tgt = tgt.view(-1)
+        _, pred = output.topk(maxk, dim=1)
+        correct = pred.eq(tgt.unsqueeze(1))
+        topk_accuracy = []
+        for k in topk:
+            correct_k = correct[:, :k].sum().item()
+            accuracy_k = correct_k / (batch_size * seq_len)
+            topk_accuracy.append(accuracy_k)
+        return topk_accuracy
     
-    for batch_idx, batch in enumerate(train_ldr):
-        batch_time = time.time()
-        # src, tgt = batch[0].to(device), batch[0].to(device)
-        src = batch[0].to(device)
-        tgt = src.clone().to(device)
-
-        tgt_input = tgt[:, :-1] # remove EOS token
-        tgt_expected = tgt[:, 1:] # remove SOS token
-        tgt_mask = subsequent_mask(tgt_input.size(1)).to(device)
-        # Create padding masks
-        src_pad_mask = (src == pad_idx).to(device)  # Shape: [batch_size, src_len], True if pad_idx
-        tgt_pad_mask = (tgt_input == pad_idx).to(device) # Shape: [batch_size, tgt_len], True if pad_idx
+    def train_iter(self, model, train_ldr, config, total_batches, epoch, criterion, optimizer, logs_train, pad_idx, log_interval=10):
+        epoch_loss = 0
+        epoch_top1_accuracy = 0
+        epoch_top5_accuracy = 0
+        max_grad_norm = 1.0
+        gradient_accumulation_steps = config['training']['gradient_accumulation_steps']
+        print("-" * 89)
 
         optimizer.zero_grad()
-        with torch.amp.autocast(device_type='cuda'):
-            prediction = model(src, tgt_input, tgt_mask, src_pad_mask, tgt_pad_mask) # [batch_size, seq_len, vocab_size]
-            # reshape predictions shape to [batch_size*seq_len, vocab_size] = tgt_expected
-            # prediction = prediction.reshape(-1, prediction.shape[-1]) # [batch_size*seq_len, vocab_size]
-            prediction = prediction.view(-1, vocab_size)
-            tgt_expected = tgt_expected.reshape(-1) # [batch_size*seq_len]
-            # tgt_expected = tgt_expected.view(-1)
-            loss_val = loss_func(prediction, tgt_expected) # [batch_size*seq_len, vocab_size] vs [batch_size*seq_len]
 
-        scaler.scale(loss_val).backward()
-        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0) # to avoid exploding gradient, 0.5 or 1.0
-        scaler.step(optimizer)
-        scaler.update()
-
-        batches_loss += loss_val.item()
-
-        if batch_idx % log_interval == 0:
-            epoch_loss += batches_loss
-            cur_loss = batches_loss / log_interval
-            elapsed = time.time() - batch_time
-            # writer.add_scalar("Loss/train", cur_loss, epoch * total_batches + batch_idx)
-            print("| epoch {:3d} | {:4d}/{:4d} batches | lr {:02.4f} | ms/batch {:5.2f} |"
-                 "loss {:5.4f} | ppl {:8.2f} ".format(epoch, batch_idx, total_batches, lr,
-                  elapsed * 1000/log_interval, cur_loss, np.exp(cur_loss)))
-            logs_train.update({"epoch": epoch, "batches": batch_idx, "lr": lr, "ms/batch": elapsed * 1000/log_interval,
-                                "loss": cur_loss, "ppl": np.exp(cur_loss)})
-            batches_loss = 0
+        for batch_idx, (src, tgt) in enumerate(train_ldr):
             batch_time = time.time()
+            src = src.to(self.device)
+            tgt = tgt.to(self.device)
 
-    print("-" * 89)
+            tgt_mask = model.subsequent_mask(tgt.size(1)).to(self.device)
+            tgt_pad_mask = model.create_pad_mask(tgt, pad_idx=pad_idx).to(self.device)
+            output = model(src, tgt_mask, tgt_pad_mask)
 
-    return epoch_loss
+            loss = criterion(output.view(-1, self.vocab_size), tgt.view(-1))
+            loss = loss / gradient_accumulation_steps
+            loss.backward()
 
-def evaluate(model, val_ldr, device, epoch, loss_func, logs_val, pad_idx):
-    model.eval()
-    epoch_loss = 0
-    epoch_start_time = time.time()
+            top1_acc, top5_acc = self.calculate_topk_accuracy(output, tgt, topk=(1, 5))
+            epoch_loss += loss.item() * gradient_accumulation_steps
+            epoch_top1_accuracy += top1_acc
+            epoch_top5_accuracy += top5_acc
 
-    for batch_idx, batch in enumerate(val_ldr):
-        src, tgt = batch[0].to(device), batch[0].to(device)
+            # Manual calculation of learning rate with warmup
+            current_step = epoch * len(train_ldr) + batch_idx
+            warmup_steps = int(config['training']['warmup_proportion'] * len(train_ldr) * config['training']['max_epochs'])
+            
+            if current_step < warmup_steps:
+                current_lr = config['training']['lr'] * (current_step / warmup_steps)
+            else: 
+                current_lr = config['training']['lr']
 
-        tgt_input = tgt[:, :-1]
-        tgt_expected = tgt[:, 1:]
-        tgt_mask = subsequent_mask(tgt_input.size(1)).to(device).bool()
+            if (batch_idx + 1) % gradient_accumulation_steps == 0:
+                torch.nn.utils.clip_grad_norm_(model.parameters(), max_grad_norm)
+                optimizer.step()
+                optimizer.zero_grad()
 
-        src_pad_mask = (src == pad_idx).to(device)
-        tgt_pad_mask = (tgt_input == pad_idx).to(device)
+            if batch_idx % log_interval == 0:
+                elapsed = time.time() - batch_time
+                print(f"| epoch {epoch+1:3d} | {batch_idx:4d}/{total_batches:4d} batches | lr {current_lr:02.5f} | ms/batch {elapsed * 1000/log_interval:5.2f} | loss {loss.item() * gradient_accumulation_steps:5.4f} | ppl {np.exp(loss.item() * gradient_accumulation_steps):8.2f} | top1_acc {top1_acc:5.4f} | top5_acc {top5_acc:5.4f} |")
+                logs_train.update({"epoch": epoch+1, "batches": batch_idx, "lr": current_lr, "ms/batch": elapsed * 1000/log_interval, "loss": loss.item() * gradient_accumulation_steps, "ppl": np.exp(loss.item() * gradient_accumulation_steps), "top1_acc": top1_acc, "top5_acc": top5_acc})
+                batch_time = time.time()
 
-        output = model(src, tgt_input, tgt_mask, src_pad_mask, tgt_pad_mask)
-        output = output.permute(0, 2, 1)
+        if (batch_idx + 1) % gradient_accumulation_steps != 0:
+            optimizer.step()
+            optimizer.zero_grad()
 
-        loss_val = loss_func(output, tgt_expected)
-        epoch_loss += len(src) * loss_val.item()
-
-    epoch_time = time.time() - epoch_start_time
-    print("-" * 89)
-    print(f"| end of epoch {epoch:3d} | time: {epoch_time:5.2f}s | loss {epoch_loss:5.4f} |")
-    print("-" * 89)
-
-    logs_val.update({"epoch": epoch, "time": epoch_time, "loss": epoch_loss})
-
-    return epoch_loss
-
-def train(model, train_ldr, val_ldr, max_epochs, device, lr, logs_train, logs_val, exp_name, pad_idx):
-    model.train()
-
-    optimizer = optim.Adam(model.parameters(), lr=lr, betas=(0.9, 0.98)) # reduce lr if no improvement
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.1) # reduce lr
-    scaler = torch.amp.GradScaler(device)
-
-    ce_loss = nn.CrossEntropyLoss(ignore_index=pad_idx).to(device)
-    # mse_loss = nn.MSELoss()
-    # l1_loss = nn.L1Loss()
-
-    total_batches = len(train_ldr)
-
-    train_loss, val_loss = [], []
-
-    for epoch in range(max_epochs):
-        train_loss.append(train_iter(model, train_ldr, device, lr, total_batches, epoch, 
-                                ce_loss, optimizer, scaler, logs_train, pad_idx))
-        val_loss.append(evaluate(model, val_ldr, device, epoch, ce_loss, logs_val, pad_idx))
-        scheduler.step()
-        print(f"Updated learning rate: {scheduler.get_last_lr()}")
-
-    plot_loss(train_loss, val_loss, exp_name)
-    print("\nTraining complete")
-
-if __name__ == "__main__":
-    try:
-        config_path = './src/config/default.yaml'
-        config = yaml.load(open(config_path, 'r'), Loader=yaml.FullLoader)
-
-        # DATA PATHS
-        prepared_path = config['data']['prepared_dir']
-        train_midi_path = config['data']['prepared']['train_data']
-        valid_midi_path = config['data']['prepared']['val_data']
-
-        # MODEL PARAMETERS  
-        n_head = config['model']['n_head']
-        num_layers = config['model']['num_layers']
-        d_model = config['model']['d_model']
-        num_layers = config['model']['num_layers']
-
-        # TRAINING PARAMETERS
-        max_epochs = config['training']['max_epochs']
-        # max_epochs = 2
-        batch_size = config['training']['batch_size']
-        lr = config['training']['lr']
-        experiments_dir = config['training']['experiments_dir']
-
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-        print("Begin PyTorch Transformer seq-to-seq demo ")
-        torch.manual_seed(1)
-        np.random.seed(1)
-
-        # 1. load data
-        print("\nLoading data int-token train data")
-        data_loader_train = Loader(train_midi_path, batch_size)
-        train_ldr, _ = data_loader_train.create_training_dataset()
-
-        print("\nLoading data int-token valid data")
-        data_loader_val = Loader(valid_midi_path, batch_size)
-        valid_ldr, _ = data_loader_val.create_training_dataset()
-
-        # 2. Create experiment environment
-        print("\nCreating experiment environment")
-        exp_dir, logs_folder, exp_name = create_exp_environment(experiments_dir) # create specific experiment directory for the current run
-
-        logs_train_writer = LogsWriter(os.path.join(logs_folder, "logs_train.csv"), 
-                                ["epoch", "batches", "lr", "ms/batch", "loss", "ppl"])
-        
-        logs_val_writer = LogsWriter(os.path.join(logs_folder, "logs_val.csv"),
-                                    ["epoch", "time", "loss"])
-
-        # 3. create Transformer network
-        print("\nCreating Transformer network")
-        vocab_size = data_loader_train.vocab_size
-        pad_idx = data_loader_train.pad_idx
-        model = TransformerNet(vocab_size, d_model, n_head, num_layers, dropout=0.0).to(device)
-
-        # 4. train network
-        print("\nStarting training")
-        train(model, train_ldr, valid_ldr, max_epochs, device, lr, logs_train_writer, logs_val_writer, exp_name, pad_idx)
-
-        # 5. save trained model
-        print("\nSaving trained model state")
-        save_exp_environment(exp_dir, model, config)
-
-
-    except Exception as e:
-        print(f"Error: {e}")
-        traceback.print_stack()
-        raise e  
+        print("-" * 89)
+        return epoch_loss / total_batches, epoch_top1_accuracy / total_batches, epoch_top5_accuracy / total_batches
     
 
+    def validate(self, model, val_ldr, epoch, criterion, logs_val, pad_idx):
+        model.eval()
+        epoch_loss = 0
+        epoch_top1_acc = 0
+        epoch_top5_acc = 0
+        epoch_start_time = time.time()
+        with torch.no_grad():
+            for _, (src, tgt) in enumerate(val_ldr):
+                src = src.to(self.device)
+                tgt = tgt.to(self.device)
 
+                tgt_mask = model.subsequent_mask(tgt.size(1)).to(self.device)
+                tgt_pad_mask = model.create_pad_mask(tgt, pad_idx=pad_idx).to(self.device)
+                output = model(src, tgt_mask, tgt_pad_mask)
 
-
-
-
+                loss = criterion(output.view(-1, self.vocab_size), tgt.view(-1))
+                epoch_loss += loss.item()
+                
+                top1_acc, top5_acc = self.calculate_topk_accuracy(output, tgt, topk=(1, 5))
+                epoch_top1_acc += top1_acc
+                epoch_top5_acc += top5_acc
+                
+        epoch_time = time.time() - epoch_start_time
+        print(f"| end of epoch {epoch+1:3d} | time: {epoch_time:5.2f}s | loss {epoch_loss:5.4f} | top1_acc {epoch_top1_acc / len(val_ldr):5.4f} | top5_acc {epoch_top5_acc / len(val_ldr):5.4f} |")
+        print("-" * 89)
+        logs_val.update({"epoch": epoch+1, "time": epoch_time, "loss": epoch_loss, "top1_acc": epoch_top1_acc / len(val_ldr), "top5_acc": epoch_top5_acc / len(val_ldr)})
+        return epoch_loss / len(val_ldr), epoch_top1_acc / len(val_ldr), epoch_top5_acc / len(val_ldr)
+    
+    def train(self):
+        exp_dir, logs_folder, exp_name = create_exp_environment(
+            self.config['training']['experiments_dir'])
         
+        logs_train_writer = LogsWriter(os.path.join(logs_folder, "logs_train.csv"), 
+                                       ["epoch", "batches", "lr", "ms/batch", "loss", "ppl", "top1_acc", "top5_acc"])
+        logs_val_writer = LogsWriter(os.path.join(logs_folder, "logs_val.csv"), 
+                                     ["epoch", "time", "loss", "top1_acc", "top5_acc"])
+        
+        optimizer = optim.AdamW(
+            self.model.parameters(),
+            lr=self.config['training']['lr'],
+            betas=(0.9, 0.98),
+            weight_decay=self.config['training']['weight_decay']
+        )
+        criterion = nn.CrossEntropyLoss(
+            ignore_index=self.pad_idx, 
+            label_smoothing=0.05
+        )
+
+        # Warmup scheduler config
+        total_steps = len(self.train_ldr) * self.config['training']['max_epochs']
+        warmup_steps = int(total_steps * self.config['training']['warmup_proportion'])
+
+        def lr_lambda(current_step):
+            if current_step < warmup_steps:
+                return float(current_step) / float(max(1, warmup_steps))
+            return 1.0
+
+        scheduler = optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
+
+        best_val_loss = float('inf')
+        epochs_no_improve = 0
+        total_batches = len(self.train_ldr)
+        train_loss, validation_loss = [], []
+        train_top1_acc, train_top5_acc = [], []
+        val_top1_acc, val_top5_acc = [], []
+
+        for epoch in range(self.config['training']['max_epochs']):
+            try:
+                epoch_loss, epoch_top1_acc, epoch_top5_acc = self.train_iter(
+                    self.model, self.train_ldr, self.config, total_batches, 
+                    epoch, criterion, optimizer, logs_train_writer, self.pad_idx)
+                
+                train_loss.append(epoch_loss)
+                train_top1_acc.append(epoch_top1_acc)
+                train_top5_acc.append(epoch_top5_acc)
+
+                val_loss, val_top1_acc_epoch, val_top5_acc_epoch = self.validate(
+                    self.model, self.val_ldr, epoch, criterion, logs_val_writer, self.pad_idx)
+                
+                validation_loss.append(val_loss)
+                val_top1_acc.append(val_top1_acc_epoch)
+                val_top5_acc.append(val_top5_acc_epoch)
+
+                scheduler.step()
+
+                # Early stopping
+                if val_loss < best_val_loss:
+                    best_val_loss = val_loss
+                    epochs_no_improve = 0
+                    save_exp_environment(exp_dir, self.model, self.config)
+                else:
+                    epochs_no_improve += 1
+                    if epochs_no_improve == self.config['training']['patience']:
+                        print("Early stopping at epoch {epoch+1}")
+                        break
+
+            except Exception as e:
+                print(f"Error during epoch {epoch}: {e}")
+                print(traceback.format_exc())
+                continue
+
+            torch.cuda.empty_cache()
+
+        plot_loss(train_loss, validation_loss, exp_name)
+        plot_accuracy(train_top1_acc, val_top1_acc, exp_name, "top1")
+        plot_accuracy(train_top5_acc, val_top5_acc, exp_name, "top5")
+
+
+if __name__ == "__main__":
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    trainer = Trainer(config_path="./src/config/default.yaml", device=device)
+    trainer.train()

@@ -6,20 +6,20 @@ import numpy as np
 class KeyEmotions(nn.Module):
     def __init__(self, vocab_size, d_model, nhead, num_layers, d_ff, dropout=0.1):
         super(KeyEmotions, self).__init__()
-        
         # Embedding and positional encoding layers
         self.embedding = nn.Embedding(vocab_size, d_model)
         self.pos_enc = PositionalEncoding(d_model, dropout=dropout)
-
+        # Additional normalization layer for better stability
+        self.norm = nn.LayerNorm(d_model)
         # Transformer Decoder
         self.decoder = Decoder(d_model, nhead, num_layers, d_ff, dropout)
-
         # Fully connected layer
         self.fc_out = nn.Linear(d_model, vocab_size)
 
     def subsequent_mask(self, size):
         mask = torch.triu(torch.ones(size, size), diagonal=1)
         return mask.bool()
+        # return torch.nn.Transformer.generate_square_subsequent_mask(size)
     
     def create_pad_mask(self, tgt, pad_idx):
         return (tgt == pad_idx)
@@ -27,7 +27,7 @@ class KeyEmotions(nn.Module):
     def forward(self, tgt, tgt_mask, tgt_pad_mask):
         tgt = self.embedding(tgt)
         tgt = self.pos_enc(tgt)
-
+        tgt = self.norm(tgt)
         z = self.decoder(tgt, tgt_mask=tgt_mask, tgt_pad_mask=tgt_pad_mask)
         return self.fc_out(z)
 
