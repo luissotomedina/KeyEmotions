@@ -1,38 +1,68 @@
-# KeyEmotions
+# KeyEmotions  
 
-KeyEmotions is a music generation system that combines emotional expression with machine learning. It leverages a Transformer-based model to generate music compositions based on user-selected emotional quadrants. The project utilizes MIDI data for training the model and generates compositions that reflect specific emotions.
+**KeyEmotions** is a music generation system that combines emotional expression with machine learning. It uses a Transformer-based model to generate music compositions based on user-selected emotional quadrants. The project processes MIDI data for training and produces emotionally expressive musical outputs.  
 
-This project is the **final thesis for a Master's degree in Artificial Intelligence**, created as part of the academic requirements to complete the degree. The system aims to explore the intersection of emotional expression and artificial intelligence in music creation.
+This project was developed as the **final thesis for a Master's degree in Artificial Intelligence**, fulfilling academic requirements for the degree.  
 
-The project was developed using **Python 3.12.8**.
+---
 
-## Features
+## 🎹 Features  
+- **Emotion-based Music Generation** – Generate music by selecting emotions (e.g., Angry, Excited, Sad, Calm).  
+- **Interactive UI** – User-friendly PyQt6 interface for model interaction.  
+- **MIDI Processing** – Uses MIDI files for training and generation.  
+- **Transformer Model** – Autoregressive architecture for music generation.  
 
-- **Emotion-based Music Generation**: Select an emotion from a predefined set (e.g., Angry, Excited, Sad, Calm) to generate music based on that emotion.
-- **Interactive UI**: A simple, clean, and intuitive graphical user interface (GUI) built using PyQt6 to interact with the model and generate music.
-- **MIDI Processing**: Use MIDI files as the base data for training and generating compositions.
-- **Model**: Transformer-based autoregressive model for music generation.
+---
 
-## Demo
+## 🎥 Demo  
+Check out the demo here:  
+🔗 [https://luissotomedina.github.io/portfolio/KeyEmotions/](https://luissotomedina.github.io/portfolio/KeyEmotions/)  
 
-You can see a live demo of the application at the following link:  
-[https://luissotomedina.github.io/portfolio/KeyEmotions/](https://luissotomedina.github.io/portfolio/KeyEmotions/)
+---
 
-## Prerequisites
+## ⚙️ Installation  
 
-### Dependencies
+### 📋 Prerequisites  
+- **Python 3.12+**  
+- **Dependencies**: PyQt6, PyTorch (CUDA optional), Mido, Fluidsynth, Pandas, Matplotlib, etc.  
 
-To run this project, you need to install the following dependencies:
-
-- Python 3.12+
-- PyQt6
-- Torch (with CUDA support, if available)
-- PyYAML
-- Mido (for MIDI processing)
-- Fluidsynth (for MIDI sound synthesis)
-- Pandas, Seaborn, Matplotlib, Numpy (for data processing and visualization)
-
-You can install the dependencies by running:
-
+Install dependencies with:  
 ```bash
 pip install -r requirements.txt
+```
+
+## 🚀 Usage
+
+### 🔄 Preprocessing
+Place MIDI files in `data/raw/`.
+
+Run preprocessing:
+
+```bash
+python src/preprocessing/run_preprocessing.py
+```
+
+### 🏗️ Dataset Creation
+To generate the training dataset:
+
+```bash
+python src/preprocessing/loader.py
+```
+
+### 🎓 Training
+Configure training parameters in `src/config/default.yaml`, then run:
+
+```bash
+python src/train.py
+```
+
+### 🎵 Generating Music
+Place `config.json` and `weights.pt` in the same directory.
+
+Launch the UI and specify model paths + output location:
+
+```bash
+python src/KeyEmotionsUI.py
+```
+
+

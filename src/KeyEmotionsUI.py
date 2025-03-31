@@ -4,11 +4,13 @@ keyEmotionsUI.py
 KeyEmotions UI for selecting emotions and generating music.
 """
 import sys
+import os
+from pathlib import Path
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QGridLayout, 
-                            QLabel, QPushButton, QFrame)
+                            QLabel, QPushButton, QFrame, QFileDialog, QHBoxLayout)
 
 from generate import *
 
@@ -25,6 +27,8 @@ class EmotionGridSelector(QWidget):
         """
         super().__init__()
         self.selected_quadrant = None
+        self.output_path = str(Path.home() / "Desktop")
+        self.model_weights_path = str(Path(__file__).parent.parent / "experiments")
         self.initUI()
 
     def initUI(self):
@@ -32,7 +36,7 @@ class EmotionGridSelector(QWidget):
         Initialize the user interface for the EmotionGridSelector.
         """
         self.setWindowTitle('Key Emotions Selector')
-        self.setGeometry(100, 100, 400, 400)
+        self.setGeometry(100, 100, 700, 600)
         
         self.setStyleSheet("""
             QWidget {
@@ -51,6 +55,10 @@ class EmotionGridSelector(QWidget):
                 font-size: 18px;
                 color: #212529;
             }
+            QFrame[accessibleName="emotionButton"] QLabel {
+                font-size: 16px;
+                font-weight: bold;
+            }
             QPushButton {
                 background-color: #6c757d;
                 color: white;
@@ -67,30 +75,31 @@ class EmotionGridSelector(QWidget):
                 background-color: #d6d8db;
                 color: #6c757d;
             }
+            #pathLabel {
+                font-size: 12px;
+                color: #495057;
+                background-color: #e9ecef;
+                padding: 5px;
+                border-radius: 4px;
+            }
+            .settingsButton {
+                background-color: #4a6fa5;
+                font-size: 12px;
+            }
+            .settingsButton:hover {
+                background-color: #3a5a80;
+            }
         """)
 
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(20, 20, 20, 20)
-        main_layout.setSpacing(20)
+        main_layout.setSpacing(15)
 
-        title_label = QLabel("KeyEmotions\nSelect dominant emotion")
-        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        title_label.setStyleSheet("""
-            QLabel {
-                font-family: Arial;
-            }
-        """)
-        
-        title_font = title_label.font()
-        title_font.setPointSize(24)
-        title_font.setBold(True)
-        title_label.setFont(title_font)
-        
-        title_label.setText("""
+        title_label = QLabel("""
             <div style='font-size: 24pt; font-weight: bold; color: #2b2d42;'>KeyEmotions</div>
             <div style='font-size: 12pt; color: #6c757d; margin-top: 5px;'>Select dominant emotion</div>
         """)
-        
+        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         main_layout.addWidget(title_label)
 
         grid_layout = QGridLayout()
@@ -107,6 +116,7 @@ class EmotionGridSelector(QWidget):
         self.emotion_frames = {}
         for emotion_id, props in self.emotions.items():
             frame = QFrame()
+            frame.setAccessibleName("emotionButton")
             frame.setCursor(Qt.CursorShape.PointingHandCursor)
             frame.mousePressEvent = lambda event, eid=emotion_id: self.select_emotion(eid)
             
@@ -125,6 +135,63 @@ class EmotionGridSelector(QWidget):
 
         main_layout.addLayout(grid_layout)
 
+        output_path_layout = QHBoxLayout()
+        output_path_layout.setSpacing(10)
+        
+        self.output_path_display = QLabel(self.output_path)
+        self.output_path_display.setObjectName("pathLabel")
+        self.output_path_display.setWordWrap(True)
+        self.output_path_display.setFixedHeight(40)
+        self.output_path_display.setMinimumWidth(250)
+        self.output_path_display.setStyleSheet("""
+            QLabel {
+                padding: 5px;
+                border: 1px solid #ced4da;
+                border-radius: 4px;
+                background-color: white;
+            }
+        """)
+        
+        output_path_button = QPushButton("Select Output Folder")
+        output_path_button.setFixedSize(150, 40)
+        output_path_button.setFont(QFont("Arial", 10))
+        output_path_button.setProperty("class", "settingsButton")
+        output_path_button.clicked.connect(self.select_output_path)
+        
+        output_path_layout.addWidget(self.output_path_display)
+        output_path_layout.addWidget(output_path_button)
+        
+        main_layout.addLayout(output_path_layout)
+
+        model_path_layout = QHBoxLayout()
+        model_path_layout.setSpacing(10)
+        
+        self.model_path_display = QLabel(self.model_weights_path)
+        self.model_path_display.setObjectName("pathLabel")
+        self.model_path_display.setWordWrap(True)
+        self.model_path_display.setFixedHeight(40) 
+        self.model_path_display.setMinimumWidth(250)
+        self.model_path_display.setStyleSheet("""
+            QLabel {
+                padding: 5px;
+                border: 1px solid #ced4da;
+                border-radius: 4px;
+                background-color: white;
+            }
+        """)
+        
+        model_path_button = QPushButton("Locate Model Weights")
+        model_path_button.setFixedSize(150, 40)
+        model_path_button.setFont(QFont("Arial", 10))
+        model_path_button.setProperty("class", "settingsButton")
+        model_path_button.clicked.connect(self.select_model_weights_path)
+        
+        model_path_layout.addWidget(self.model_path_display)
+        model_path_layout.addWidget(model_path_button)
+        
+        main_layout.addLayout(model_path_layout)
+
+        # Generate button
         self.generate_btn = QPushButton("Generate Music 🎵")
         self.generate_btn.setFont(QFont("Arial", 12))
         self.generate_btn.clicked.connect(self.generate_music)
@@ -153,27 +220,70 @@ class EmotionGridSelector(QWidget):
         self.generate_btn.setEnabled(True)
         print(f"Selected emotion: {self.emotions[emotion_id]['name']}")
 
+    def select_output_path(self):
+        """
+        Open a dialog to select the output directory.
+        """
+        path = QFileDialog.getExistingDirectory(
+            self,
+            "Select Output Directory",
+            self.output_path,
+            QFileDialog.Option.ShowDirsOnly
+        )
+        
+        if path:
+            self.output_path = path
+            self.output_path_display.setText(path)
+            print(f"Output path set to: {path}")
+
+    def select_model_weights_path(self):
+        """
+        Open a dialog to select the model weights directory.
+        """
+        path = QFileDialog.getExistingDirectory(
+            self,
+            "Locate Model Weights Directory",
+            self.model_weights_path,
+            QFileDialog.Option.ShowDirsOnly
+        )
+        
+        if path:
+            self.model_weights_path = path
+            self.model_path_display.setText(path)
+            print(f"Model weights path set to: {path}")
+
     def generate_music(self):
         """
-        Generate music with selected emotion
+        Generate music with selected emotion.
         """
         if self.selected_quadrant is None:
             return
             
         emotion = self.emotions[self.selected_quadrant]
         print(f"\nGenerating music with emotion: {emotion['name']}")
+        print(f"Output directory: {self.output_path}")
+        print(f"Model weights directory: {self.model_weights_path}")
         
         self.generate_btn.setText("Generating... 🎶")
         self.generate_btn.setEnabled(False)
         QApplication.processEvents()
         
-        generator = KeyEmotionsGenerator()
-        generator.generate_and_save(emotion['idx'], 19, output_path="output")
-        # run_KeyEmotions(emotion['idx'], 19, output_path="output")
-
-        self.generate_btn.setText("Generate Music")
-        self.generate_btn.setEnabled(True)
-        print("Music generated successfully!\n")
+        try:
+            os.makedirs(self.output_path, exist_ok=True)
+            
+            generator = KeyEmotionsGenerator()
+            generator.generate_and_save(
+                emotion=emotion['idx'],
+                output_path=self.output_path,
+                exp_dir=self.model_weights_path
+            )
+            
+            print("Music generated successfully!\n")
+        except Exception as e:
+            print(f"Error generating music: {str(e)}")
+        finally:
+            self.generate_btn.setText("Generate Music 🎵")
+            self.generate_btn.setEnabled(True)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

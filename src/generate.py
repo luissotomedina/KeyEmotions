@@ -49,16 +49,21 @@ class KeyEmotionsGenerator:
         self.model = None
         self.config = None
         
-    def load_experiment(self, exp_num):
+    def load_experiment(self, exp_dir):
         """
         Load model and configuration for a specific experiment number
         
         Parameters:
             exp_num (int): Experiment number to load.
         """
-        exp_name = f"exp_{exp_num}"
-        config_path = os.path.join(self.experiments_dir, exp_name, "config.json")
-        weights_path = os.path.join(self.experiments_dir, exp_name, "weigths.pt")
+        if isinstance(exp_dir, int):
+            exp_name = f"exp_{exp_dir}"
+            model_directory = os.path.join(self.experiments_dir, exp_name)
+        else: # If a directory is provided directly
+            model_directory = exp_dir
+        
+        config_path = os.path.join(model_directory, "config.json")
+        weights_path = os.path.join(model_directory, "weigths.pt")
         
         try:
             with open(config_path, "r", encoding="utf-8") as f:
@@ -257,13 +262,13 @@ class KeyEmotionsGenerator:
         mid.save(midi_path)
         return midi_path
     
-    def generate_and_save(self, emotion, exp_num, output_path=None, max_len=1300, max_bar=8, temperature=1.0):
+    def generate_and_save(self, emotion, exp_dir=None, output_path=None, max_len=1300, max_bar=8, temperature=1.0):
         """
         Complete generation pipeline
         
         Parameters:
             emotion (int): Emotion index (1-4).
-            exp_num (int): Experiment number to load.
+            exp_dir (str): Model directory.
             output_path (str): Path to save the generated MIDI file.
             max_len (int): Maximum length of the generated sequence.
             max_bar (int): Maximum number of bars to generate.
@@ -276,7 +281,7 @@ class KeyEmotionsGenerator:
         if output_path is None:
             output_path = os.path.join(self.experiments_dir, f"exp_{exp_num}", "generations")
         
-        self.load_experiment(exp_num)
+        self.load_experiment(exp_dir)
         sequence = self.generate_sequence(emotion, max_len, max_bar, temperature)
         midi_path = self.remi_to_midi(sequence, output_path)
         
