@@ -1,10 +1,23 @@
-import pickle
+"""
+loader.py
+
+This module defines a PyTorch Dataset class for loading and preprocessing tokenized data.
+"""
 
 import torch
+import pickle
+
 from torch.utils.data import DataLoader, Dataset
 
 class Loader(Dataset): # Inherit from PyTorch Dataset class
     def __init__(self, tokenized_data_path, batch_size):
+        """
+        Initialize the Loader class.
+        
+        Parameters:
+            tokenized_data_path (str): Path to the tokenized data file.
+            batch_size (int): Batch size for DataLoader.
+        """
         self.tokenized_data_path = tokenized_data_path
         self.batch_size = batch_size
         self.max_len = 0
@@ -23,7 +36,6 @@ class Loader(Dataset): # Inherit from PyTorch Dataset class
         self.pad_idx = 179
         self.eos_idx = 180
 
-        # Load and preprocess dataset
         self.data = self._load_dataset()
         if not self.data:
             raise ValueError("Dataset is empty! Check your tokenized data path.")
@@ -34,28 +46,55 @@ class Loader(Dataset): # Inherit from PyTorch Dataset class
         self._set_number_of_tokens() 
 
     def _load_dataset(self):
+        """
+        Load the dataset from the specified path.
+
+        Returns:
+            list: Loaded dataset.
+        """
         with open(self.tokenized_data_path, 'rb') as f:
             return pickle.load(f)
 
     def _set_max_len(self):
+        """
+        Set the maximum length of sequences in the dataset.
+        """
         self.max_len = max((len(song) for song in self.data), default=0)  # Handles empty list safely
 
     def _set_number_of_tokens(self):
+        """
+        Set the number of unique tokens in the dataset.
+        """
         self.number_of_tokens = len(set(token for song in self.data for token in song))
         
     def _set_vocab_size(self):
+        """
+        Set the vocabulary size based on the maximum token index in the dataset.
+        """
         self.vocab_size = max(max(song) for song in self.data) + 1
 
     def _pad_sequence(self, sequence):
+        """
+        Pad a sequence to the maximum length.
+
+        Returns:
+            list: Padded sequence.
+        """
         eos_token = sequence[-1]
         remi_token = sequence[:-1]
         
         return remi_token + [self.pad_idx] * (self.max_len - len(sequence)) + [eos_token] # Ensure last token is not padded, EOS token
 
     def __len__(self):
+        """
+        Return the number of sequences in the dataset.
+        """
         return len(self.data)
     
     def __getitem__(self, idx):
+        """
+        Get a sequence and its corresponding target sequence.
+        """
         sequence = self.padded_data[idx]
         input_sequence = sequence[:-1]
         output_sequence = sequence[1:]
@@ -63,6 +102,12 @@ class Loader(Dataset): # Inherit from PyTorch Dataset class
                 torch.tensor(output_sequence, dtype=torch.int64)
 
     def create_dataloader(self, shuffle=True, drop_last=True):
+        """
+        Create a DataLoader for the dataset.
+
+        Returns:
+            DataLoader: DataLoader for the dataset.
+        """
         return DataLoader(
             dataset=self,
             batch_size=self.batch_size,

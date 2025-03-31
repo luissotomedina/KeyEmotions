@@ -1,22 +1,39 @@
+"""
+keyEmotionsUI.py
+
+KeyEmotions UI for selecting emotions and generating music.
+"""
 import sys
-from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QGridLayout, 
-                            QLabel, QPushButton, QFrame)
+
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont
+from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QGridLayout, 
+                            QLabel, QPushButton, QFrame)
 
 from generate import *
 
 class EmotionGridSelector(QWidget):
+    """
+    EmotionGridSelector is a PyQt6 widget that allows users to select an emotion
+    from a grid of options. Each option is represented by a frame containing an emoji
+    and a label. The selected emotion is highlighted, and a button is provided to
+    generate music based on the selected emotion.
+    """
     def __init__(self):
+        """
+        Initialize the EmotionGridSelector widget.
+        """
         super().__init__()
         self.selected_quadrant = None
         self.initUI()
 
     def initUI(self):
+        """
+        Initialize the user interface for the EmotionGridSelector.
+        """
         self.setWindowTitle('Key Emotions Selector')
         self.setGeometry(100, 100, 400, 400)
         
-        # Configuración de estilos minimalista
         self.setStyleSheet("""
             QWidget {
                 background-color: #f8f9fa;
@@ -117,7 +134,12 @@ class EmotionGridSelector(QWidget):
         self.setLayout(main_layout)
 
     def select_emotion(self, emotion_id):
-        """Select emotion apply background color"""
+        """
+        Select emotion apply background color
+
+        Parameters:
+            emotion_id (int): ID of the selected emotion.
+        """
         for eid, frame in self.emotion_frames.items():
             frame.setStyleSheet("QFrame { background-color: white; border: 2px solid #dee2e6; }")
         
@@ -132,7 +154,9 @@ class EmotionGridSelector(QWidget):
         print(f"Selected emotion: {self.emotions[emotion_id]['name']}")
 
     def generate_music(self):
-        """Generate music with selected emotion"""
+        """
+        Generate music with selected emotion
+        """
         if self.selected_quadrant is None:
             return
             

@@ -1,3 +1,9 @@
+"""
+midi_utils.py
+
+Utilities for MIDI file processing
+"""
+
 import os
 import time
 import fluidsynth
@@ -12,7 +18,6 @@ def save_midi(mid, output_path):
     """
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     mid.save(output_path)
-    # print(f"MIDI file saved to {output_path}")
 
 def pitch_range(mid):
     """
@@ -65,6 +70,16 @@ def more_than_one_time_signature(mid):
     return len(time_signatures) > 1
 
 def calculate_ticks_per_bar(time_signature, ticks_per_beat):
+    """
+    Calculate the number of ticks per bar based on the time signature and ticks per beat.
+
+    Parameters:
+        time_signature: tuple, time signature (numerator, denominator).
+        ticks_per_beat: int, number of ticks per beat.
+
+    Returns: 
+        ticks_per_bar: int, number of ticks per bar.
+    """
     if time_signature[1] == 8 and time_signature[0] % 3 == 0:
         f = 3 # Compound time signature
     else:
@@ -74,6 +89,14 @@ def calculate_ticks_per_bar(time_signature, ticks_per_beat):
     return ticks_per_bar
 
 def midi_to_wav(midi_file, soundfont, output_wav):
+    """
+    Convert MIDI file to WAV using FluidSynth.
+    
+    Parameters:
+        midi_file (str): Path to the MIDI file.
+        soundfont (str): Path to the SoundFont file.
+        output_wav (str): Path to save the output WAV file.
+    """
     print(f"Converting {midi_file} to {output_wav}")
     fs = fluidsynth.Synth()
     fs.start(driver="dsound") # Windows, use "alsa" for Linux

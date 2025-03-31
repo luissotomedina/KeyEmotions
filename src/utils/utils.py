@@ -1,3 +1,9 @@
+"""
+utils.py
+
+Utilities for data loading, saving, and plotting.
+"""
+
 import os
 import csv
 import json
@@ -45,6 +51,14 @@ def save_to_json(data, output_path):
         print(f"Data saved to {output_path}")
 
 def save_plot(plt, output_path, filename):
+    """
+    Save plot to a specific directory.
+
+    Parameters:
+        plt: matplotlib.pyplot, plot to save.
+        output_path (str): Path to save the plot.
+        filename (str): Name of the file to save.
+    """
     os.makedirs(output_path, exist_ok=True)
     plt.savefig(os.path.join(output_path, filename))
     print(f'Plot saved to {output_path}{filename}')
@@ -105,6 +119,17 @@ def save_metadata(metadata_list, output_path, is_midi=True):
         print(f"Metadata saved to {output_path}")
 
 def create_exp_environment(experiments_dir):
+    """
+    Create experiment environment.
+    
+    Parameters:
+        experiments_dir (str): Path to the directory where the experiment will be created.
+    
+    Returns:
+        exp_folder (str): Path to the experiment folder.
+        logs_folder (str): Path to the logs folder.
+        exp_name (str): Name of the experiment.
+    """
     try:
         os.mkdir(experiments_dir)
     except:
@@ -149,6 +174,14 @@ def create_exp_environment(experiments_dir):
     return exp_folder, logs_folder, exp_name
 
 def save_exp_environment(exp_dir, model, config):
+    """
+    Save experiment environment.
+
+    Parameters:
+        exp_dir (str): Path to the experiment directory.
+        model: model to save.
+        config: configuration to save.
+    """
     weights_fn = os.path.join(exp_dir, "weigths.pt")
     config_fn = os.path.join(exp_dir, "config.json")
     torch_save(model.state_dict(), weights_fn)
@@ -156,6 +189,15 @@ def save_exp_environment(exp_dir, model, config):
     print(f"Experiment environment saved to {exp_dir}")
 
 def plot_progress(df, column, exp_name, mode="training"):
+    """
+    Plot training or validation progress.
+    
+    Parameters:
+        df: pd.DataFrame, DataFrame containing the training or validation data.
+        column (str): Column name to plot.
+        exp_name (str): Name of the experiment.
+        mode (str): Mode of the plot ("training" or "validation").
+    """
     sns.set_palette("muted")
     plt.subplots(figsize=(10, 5))
 
@@ -178,6 +220,14 @@ def plot_progress(df, column, exp_name, mode="training"):
     save_plot(plt, save_path, filename)
 
 def plot_loss(train_epoch_loss, val_epoch_loss, exp_name):
+    """
+    Plot training and validation loss.
+    
+    Parameters:
+        train_epoch_loss: list, training loss for each epoch.
+        val_epoch_loss: list, validation loss for each epoch.
+        exp_name (str): Name of the experiment.
+    """
     for mode, epoch_loss in zip(["training", "validation"], [train_epoch_loss, val_epoch_loss]):
         sns.set_palette("muted")
         plt.subplots(figsize=(10, 5))
@@ -193,6 +243,15 @@ def plot_loss(train_epoch_loss, val_epoch_loss, exp_name):
         save_plot(plt, save_path, filename)
 
 def plot_accuracy(train_epoch_acc, val_epoch_acc, exp_name, metric_name):
+    """
+    Plot training and validation accuracy.
+    
+    Parameters:
+        train_epoch_acc: list, training accuracy for each epoch.
+        val_epoch_acc: list, validation accuracy for each epoch.
+        exp_name (str): Name of the experiment.
+        metric_name (str): Name of the metric to plot.
+    """
     sns.set_palette("muted")
     plt.figure(figsize=(10, 5))
 
@@ -207,9 +266,10 @@ def plot_accuracy(train_epoch_acc, val_epoch_acc, exp_name, metric_name):
     filename = f"{exp_name}_epoch_{metric_name.lower().replace(' ', '_')}.png"
     save_path = f"./experiments/{exp_name}/plots/"
     save_plot(plt, save_path, filename)
-    
-
 class LogsWriter:
+    """
+    Class to write logs to a CSV file.
+    """
     def __init__(self, output_path, columns):
         self.output_path = output_path
         self.columns = columns

@@ -49,8 +49,6 @@ def process_metadata_emopia(df):
     Returns:
         df: pd.DataFrame, metadata with Q label
     """
-    # df['name'] = df['name'] + '.mid'
-
     df['label'] = df['label'].apply(lambda x: 1 if x == 'Q1' else 2 if x == 'Q2' else 3 if x == 'Q3' else 4)
 
     df = df[['name', 'label', 'keyname', 'tempo']]

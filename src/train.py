@@ -1,18 +1,35 @@
+"""
+train.py
+
+Training script for KeyEmotions model.
+"""
+
 import os
 import time
 import yaml
+import torch
 import random
 import traceback
 import numpy as np
-import torch
 import torch.nn as nn
 import torch.optim as optim
+
 from utils.utils import *
 from models.KeyEmotions import *
 from preprocessing.loader import Loader
 
 class Trainer:
+    """
+    Trainer class for training the KeyEmotions model.
+    """
     def __init__(self, config_path, device):
+        """
+        Initialize the Trainer class.
+
+        Parameters:
+            config_path (str): Path to the configuration file.
+            device (torch.device): Device to use for training (CPU or GPU).
+        """
         self.config = yaml.load(open(config_path, 'r'), Loader=yaml.FullLoader)
         self.device = device
         self.set_seeds()
@@ -20,12 +37,18 @@ class Trainer:
         self.initialize_model()
 
     def set_seeds(self):
+        """
+        Set random seeds for reproducibility.
+        """
         random.seed(42)
         np.random.seed(42)
         torch.manual_seed(42)
         torch.cuda.manual_seed_all(42)
 
     def load_data(self):
+        """
+        Load training and validation data using the Loader class.
+        """
         train_midi_path = self.config['data']['prepared']['train_data']
         validation_midi_path = self.config['data']['prepared']['val_data']
         batch_size = self.config['training']['batch_size']
@@ -40,6 +63,9 @@ class Trainer:
         self.pad_idx = self.data_loader_train.pad_idx
 
     def initialize_model(self):
+        """
+        Initialize the KeyEmotions model with the specified configuration from YAML file.
+        """
         self.model = KeyEmotions(
             vocab_size=self.vocab_size,
             d_model=self.config['model']['d_model'],
@@ -50,6 +76,17 @@ class Trainer:
         ).to(self.device)
 
     def calculate_topk_accuracy(self, output, tgt, topk=(1, 5)):
+        """
+        Calculate top-k accuracy for the model predictions.
+
+        Parameters:
+            output (torch.Tensor): Model output predictions.
+            tgt (torch.Tensor): Target labels.
+            topk (tuple): Tuple of k values for top-k accuracy.
+
+        Returns:
+            list: List of top-k accuracies.
+        """
         batch_size, seq_len, vocab_size = output.size()
         maxk = max(topk)
         if maxk > vocab_size:
@@ -66,6 +103,24 @@ class Trainer:
         return topk_accuracy
     
     def train_iter(self, model, train_ldr, config, total_batches, epoch, criterion, optimizer, logs_train, pad_idx, log_interval=10):
+        """
+        Train the model for one epoch.
+        
+        Parameters:
+            model (nn.Module): The model to train.
+            train_ldr (DataLoader): DataLoader for training data.
+            config (dict): Configuration dictionary.
+            total_batches (int): Total number of batches in the training set.
+            epoch (int): Current epoch number.
+            criterion (nn.Module): Loss function.
+            optimizer (torch.optim.Optimizer): Optimizer for training.
+            logs_train (LogsWriter): Logs writer for training logs.
+            pad_idx (int): Padding index for the target sequences.
+            log_interval (int): Interval for logging training progress.
+        
+        Returns:
+            Average loss, top-1 accuracy, and top-5 accuracy for the epoch.
+        """
         epoch_loss = 0
         epoch_top1_accuracy = 0
         epoch_top5_accuracy = 0
@@ -122,6 +177,20 @@ class Trainer:
     
 
     def validate(self, model, val_ldr, epoch, criterion, logs_val, pad_idx):
+        """
+        Validate the model on the validation set.
+
+        Parameters:
+            model (nn.Module): The model to validate.
+            val_ldr (DataLoader): DataLoader for validation data.
+            epoch (int): Current epoch number.
+            criterion (nn.Module): Loss function.
+            logs_val (LogsWriter): Logs writer for validation logs.
+            pad_idx (int): Padding index for the target sequences.
+
+        Returns:
+            Average loss, top-1 accuracy, and top-5 accuracy for the validation set.
+        """
         model.eval()
         epoch_loss = 0
         epoch_top1_acc = 0
@@ -150,6 +219,9 @@ class Trainer:
         return epoch_loss / len(val_ldr), epoch_top1_acc / len(val_ldr), epoch_top5_acc / len(val_ldr)
     
     def train(self):
+        """
+        Train the KeyEmotions model.
+        """
         exp_dir, logs_folder, exp_name = create_exp_environment(
             self.config['training']['experiments_dir'])
         

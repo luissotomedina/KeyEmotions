@@ -1,6 +1,14 @@
+"""
+create_data.py
+
+This script is responsible for creating the dataset for the MIDI files and their corresponding emotion.
+"""
+
+
 import os
 import sys
 import yaml
+
 from pathlib import Path
 from random import shuffle
 from mido import MidiFile, MidiTrack
@@ -68,14 +76,25 @@ def data_augmentation(midi, output_path, n_transpose=3):
             transposed_midi.save(transposed_midi_path)
 
 def extract_notes_and_chords(mid):
+    """
+    Extract all musical events from a MIDI file. 
+
+    Parameters:
+        mid: MidiFile, MIDI file to extract events from.
+
+    Returns:
+        events: list, list of musical events with their start time, note, velocity, and duration.
+        time_signature: list, time signature of the MIDI file.
+    """
+
     events = []
     note_start_times = {}
     current_time = 0
     time_signature = []
 
     for track in mid.tracks:
-        current_time = 0 # Ojo aquí si las pistas comienzan en tiempos distintos
-        # events.append(mid.tracks.index(track))  
+        current_time = 0 
+
         for msg in track:
             if msg.type == 'time_signature':
                 time_signature = [msg.numerator, msg.denominator]
@@ -101,22 +120,31 @@ def extract_notes_and_chords(mid):
     return sorted(events, key=lambda x: x['time']), time_signature
 
 def quantize_to_grid(ticks_time, ticks_duration, ticks_per_beat, grids_per_bar, time_signature):
+    """
+    Quantize the start time and duration of a note to the nearest grid.
+
+    Parameters:
+        ticks_time: int, start time of the note in ticks.
+        ticks_duration: int, duration of the note in ticks.
+        ticks_per_beat: int, number of ticks per beat.
+        grids_per_bar: int, number of grids per bar.
+        time_signature: list, time signature of the MIDI file.
+
+    Returns:
+        bar: int, bar number of the quantized note.
+        position: int, position in the bar of the quantized note.
+        duration_position: int, duration in grids of the quantized note.
+    """
     ticks_per_bar =  calculate_ticks_per_bar(time_signature, ticks_per_beat)
     ticks_per_grid = ticks_per_bar // grids_per_bar
-    # ticks_per_grid = (ticks_per_beat * 4) // grids_per_bar
-    # ticks_per_bar = ticks_per_beat * 4
 
-    # Quantize the start time
     quantized_time = round(ticks_time / ticks_per_grid) * ticks_per_grid
 
-    # Quantize the duration
     quantized_duration = round(ticks_duration / ticks_per_grid) * ticks_per_grid # 1024
 
-    # Calculate the bar and position in the bar of the quantized time
     bar = quantized_time // ticks_per_bar
     position = int((ticks_time % ticks_per_bar) / ticks_per_grid)
 
-    # Calcute the duration in grids
     duration_position = int((quantized_duration % ticks_per_bar) / ticks_per_grid)
 
     return bar, position, duration_position
@@ -139,6 +167,21 @@ def midi_to_REMI(mid, grids_per_bar, SOS_ind=0, bar_ind=5, pos_ind=6, pitch_ind=
         - 170-178: Ticks per beat, 9 values
         - 179: Padding
         - 180: End of sequence
+
+    Parameters:
+        mid: MidiFile, MIDI file to extract events from.
+        grids_per_bar: int, number of grids per bar.
+        SOS_ind: int, start of sequence token index.
+        bar_ind: int, bar token index.
+        pos_ind: int, position token index.
+        pitch_ind: int, pitch token index.
+        duration_ind: int, duration token index.
+        timesign_ind: int, time signature token index.
+        tpb_ind: int, ticks per beat token index.
+        EOS_ind: int, end of sequence token index.
+
+    Returns:
+        tokens: list, list of tokens in the REMI format.
     """
     ticks_per_beat = mid.ticks_per_beat
 
@@ -149,14 +192,11 @@ def midi_to_REMI(mid, grids_per_bar, SOS_ind=0, bar_ind=5, pos_ind=6, pitch_ind=
     duration_set = set()
     current_bar = None
 
-    # Add start of sequence token
     tokens.append(SOS_ind)
 
-    # Add ticks per beat token
     ticks_per_beat_token = TPB[ticks_per_beat] + tpb_ind
     tokens.append(ticks_per_beat_token)
 
-    # Add time signature token
     time_signature_token = TIMESIGN[str(time_signature)] + timesign_ind
     tokens.append(time_signature_token)
 
@@ -178,7 +218,6 @@ def midi_to_REMI(mid, grids_per_bar, SOS_ind=0, bar_ind=5, pos_ind=6, pitch_ind=
         except:
             print(f"Error with {Path(mid.filename).stem} - {event['duration']}")
 
-    # Add end of sequence token
     tokens.append(EOS_ind)
             
     return tokens
@@ -262,10 +301,6 @@ def create_datasets(midi_paths, emotion_df, grids_per_bar, output_path, filename
 
     save_file = os.path.join(output_path, f"{filename}.pkl")
     save_to_pickle(all_tokens, save_file)
-    # save_txt = os.path.join(output_path, f"{filename}.txt")
-    # with open(save_txt, 'w') as f:
-    #     for tokens in all_tokens:
-    #         f.write(f"{tokens}\n")
     
 
 if __name__ == '__main__':

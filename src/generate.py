@@ -1,8 +1,18 @@
+"""
+generate.py
+
+This script generates music sequences using the KeyEmotions model.
+It handles loading the model, generating sequences based on emotions,
+and converting the generated sequences into MIDI files.
+"""
+
 import os
 import json
 import torch
-from mido import MidiFile, MidiTrack, Message, MetaMessage
 import torch.nn.functional as F
+
+from mido import MidiFile, MidiTrack, Message, MetaMessage
+
 from models.KeyEmotions import KeyEmotions
 
 class KeyEmotionsGenerator:
@@ -28,13 +38,24 @@ class KeyEmotionsGenerator:
     EOS_IDX = 180
     
     def __init__(self, experiments_dir='./experiments'):
+        """
+        Initialize the KeyEmotionsGenerator with the directory for experiments.
+        
+        Parameters:
+            experiments_dir (str): Path to the directory containing experiment data.
+        """
         self.experiments_dir = experiments_dir
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = None
         self.config = None
         
     def load_experiment(self, exp_num):
-        """Load model and configuration for a specific experiment number"""
+        """
+        Load model and configuration for a specific experiment number
+        
+        Parameters:
+            exp_num (int): Experiment number to load.
+        """
         exp_name = f"exp_{exp_num}"
         config_path = os.path.join(self.experiments_dir, exp_name, "config.json")
         weights_path = os.path.join(self.experiments_dir, exp_name, "weigths.pt")
@@ -45,7 +66,6 @@ class KeyEmotionsGenerator:
         except Exception as e:
             raise RuntimeError(f"Failed to load config: {str(e)}")
         
-        # Initialize model
         try:
             self.model = KeyEmotions(
                 vocab_size=self.config['model']['vocab_size'],
@@ -62,7 +82,18 @@ class KeyEmotionsGenerator:
         return self
     
     def generate_sequence(self, emotion, max_len=1300, max_bar=8, temperature=1.0):
-        """Generate a musical sequence for the given emotion"""
+        """
+        Generate a musical sequence for the given emotion
+
+        Parameters:
+            emotion (int): Emotion index (1-4).
+            max_len (int): Maximum length of the generated sequence.
+            max_bar (int): Maximum number of bars to generate.
+            temperature (float): Sampling temperature for generation.
+        
+        Returns:
+            list: Generated sequence of tokens.
+        """
         if emotion not in range(1, 5):
             raise ValueError("Emotion must be in range [1, 4]")
         if not self.model:
@@ -127,7 +158,16 @@ class KeyEmotionsGenerator:
     
     @staticmethod
     def remi_to_midi(remi_sequence, output_path):
-        """Convert a REMI sequence to MIDI file"""
+        """
+        Convert a REMI sequence to MIDI file
+        
+        Parameters:
+            remi_sequence (list): The REMI sequence to convert.
+            output_path (str): Path to save the generated MIDI file.
+
+        Returns:
+            str: Path to the saved MIDI file.
+        """
         TIMESIGN = {'[2, 2]': 0, '[2, 4]': 1, '[3, 4]': 2, '[4, 4]': 3, '[5, 4]': 4,
                    '[6, 4]': 5, '[5, 8]': 6, '[6, 8]': 7, '[7, 8]': 8, '[9, 8]': 9}
         TPB = {48: 0, 96: 1, 120: 2, 192: 3, 256: 4, 384: 5, 480: 6, 960: 7, 1024: 8}
@@ -159,7 +199,6 @@ class KeyEmotionsGenerator:
                                denominator=time_signature[1], 
                                time=0))
         
-        # Process notes
         current_bar = 0
         events = []
         i = 0
@@ -219,7 +258,21 @@ class KeyEmotionsGenerator:
         return midi_path
     
     def generate_and_save(self, emotion, exp_num, output_path=None, max_len=1300, max_bar=8, temperature=1.0):
-        """Complete generation pipeline"""
+        """
+        Complete generation pipeline
+        
+        Parameters:
+            emotion (int): Emotion index (1-4).
+            exp_num (int): Experiment number to load.
+            output_path (str): Path to save the generated MIDI file.
+            max_len (int): Maximum length of the generated sequence.
+            max_bar (int): Maximum number of bars to generate.
+            temperature (float): Sampling temperature for generation.    
+
+        Returns:
+            sequence (list): Generated sequence of tokens.
+            midi_path (str): Path to the saved MIDI file.   
+        """
         if output_path is None:
             output_path = os.path.join(self.experiments_dir, f"exp_{exp_num}", "generations")
         

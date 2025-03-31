@@ -1,11 +1,15 @@
-import os
-import sys
-from pathlib import Path
+"""
+midi_preprocessing.py
 
+Preprocessing functions for MIDI files
+"""
+
+import os
 import mido
+
+from pathlib import Path
 from mido import MidiFile, MidiTrack, merge_tracks
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from utils.utils import *
 from utils.midi_utils import * 
 
@@ -177,7 +181,7 @@ def save_bar_messages(message, bar_number, ticks_per_beat, filename, output_path
     bar_track = MidiTrack()
     bar_midi.tracks.append(bar_track)
     for msg in message:
-        msg.time = int(msg.time) # int(msg.time)
+        msg.time = int(msg.time)
         bar_track.append(msg)
     output_file = os.path.join(output_path, f"{filename}_{bar_number}.mid")
     save_midi(bar_midi, output_file)
@@ -195,7 +199,7 @@ def split_midi_by_bar(mid, bars_to_extract, filename, output_path):
         save_remaining: bool, save remaining messages    
     """
     ticks_per_beat = mid.ticks_per_beat
-    numerator_time_signature, _ =  get_numerator_denominator(mid) #next((msg.numerator for msg in mid if msg.type == 'time_signature'), 4)
+    numerator_time_signature, _ =  get_numerator_denominator(mid)
     ticks_per_bar = ticks_per_beat * numerator_time_signature
     ticks_to_extract = ticks_per_bar * bars_to_extract
 
